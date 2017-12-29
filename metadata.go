@@ -9,37 +9,82 @@ import (
 
 	"strconv"
 
-	"github.com/pkg/errors"
+	"path/filepath"
+
+	"os"
+
+	"errors"
+	"io/ioutil"
 )
 
 type (
-	structMetadata struct {
-		structName string
-		sType      reflect.Type
-		fields     map[string]*fieldMetadata
+	StructMetadata struct {
+		StructName string
+		Fields     map[string]*FieldMetadata
 	}
 
-	fieldMetadata struct {
-		fieldName  string
-		sfType     reflect.StructField
-		validators []*validatorMetadata
+	FieldMetadata struct {
+		FieldName  string
+		Validators []*ValidatorMetadata
 	}
 
-	validatorMetadata struct {
-		validatorName string
-		validator     Validator
-		arg           interface{}
+	ValidatorMetadata struct {
+		Tag       string
+		Validator Validator
+		Arg       interface{}
 	}
 )
 
 const tagName = "valid"
 
-var metadataList = map[string]*structMetadata{}
+var metadataList = map[string]*StructMetadata{}
 var metadataMutex = &sync.Mutex{}
 
-func getStructMetadata(s interface{}) (*structMetadata, error) {
+func LoadFiles(patterns ...string) error {
+	for _, pattern := range patterns {
+		matches, err := filepath.Glob(pattern)
+		if err != nil {
+			return err
+		}
+
+		for _, match := range matches {
+			parser, ok := parsers[filepath.Ext(match)]
+			if !ok {
+				continue
+			}
+
+			file, err := os.Open(match)
+			if err != nil {
+				return err
+			}
+
+			config, err := ioutil.ReadAll(file)
+			if err != nil {
+				return err
+			}
+
+			result, err := parser(string(config))
+			if err != nil {
+				return err
+			}
+
+			if result == nil {
+				continue
+			}
+
+			for _, metadata := range result {
+				metadataList[metadata.StructName] = metadata
+				// TODO: Add verbosity
+			}
+		}
+	}
+
+	return nil
+}
+
+func getStructMetadata(s interface{}) (*StructMetadata, error) {
 	structType := reflect.TypeOf(s)
-	structName := structType.Name()
+	structName := structType.String()
 
 	metadataMutex.Lock()
 	metadata, err := findOrLoadMetadata(structName, structType)
@@ -52,7 +97,7 @@ func getStructMetadata(s interface{}) (*structMetadata, error) {
 	return metadata, nil
 }
 
-func findOrLoadMetadata(structName string, structType reflect.Type) (*structMetadata, error) {
+func findOrLoadMetadata(structName string, structType reflect.Type) (*StructMetadata, error) {
 	if _, ok := metadataList[structName]; !ok {
 		metadata, err := loadMetadataFromType(structName, structType)
 		if err != nil {
@@ -65,11 +110,10 @@ func findOrLoadMetadata(structName string, structType reflect.Type) (*structMeta
 	return metadataList[structName], nil
 }
 
-func loadMetadataFromType(structName string, structType reflect.Type) (*structMetadata, error) {
-	metadata := &structMetadata{
-		structName: structName,
-		sType:      structType,
-		fields:     make(map[string]*fieldMetadata),
+func loadMetadataFromType(structName string, structType reflect.Type) (*StructMetadata, error) {
+	metadata := &StructMetadata{
+		StructName: structName,
+		Fields:     make(map[string]*FieldMetadata),
 	}
 
 	for i := 0; i < structType.NumField(); i++ {
@@ -79,33 +123,32 @@ func loadMetadataFromType(structName string, structType reflect.Type) (*structMe
 			continue
 		}
 
-		configs := strings.Split(tag, ",")
-		if configs == nil {
+		tags := strings.Split(tag, ",")
+		if tags == nil {
 			continue
 		}
 
-		fm := &fieldMetadata{
-			fieldName:  fieldType.Name,
-			sfType:     fieldType,
-			validators: []*validatorMetadata{},
+		fm := &FieldMetadata{
+			FieldName:  fieldType.Name,
+			Validators: []*ValidatorMetadata{},
 		}
-		metadata.fields[fieldType.Name] = fm
+		metadata.Fields[fieldType.Name] = fm
 
-		for _, config := range configs {
-			c := strings.Split(strings.TrimSpace(config), "=")
-			name := strings.TrimSpace(c[0])
-			if name == "" {
+		for _, validatorTag := range tags {
+			c := strings.Split(strings.TrimSpace(validatorTag), "=")
+			t := strings.TrimSpace(c[0])
+			if t == "" {
 				continue
 			}
 
-			validator, ok := validators[name]
+			validator, ok := validators[t]
 			if !ok {
-				return nil, errors.New(fmt.Sprintf("Validator %s doesn't exists", name))
+				return nil, errors.New(fmt.Sprintf("validator %s doesn't exists", t))
 			}
 
-			vm := &validatorMetadata{
-				validatorName: name,
-				validator:     validator,
+			vm := &ValidatorMetadata{
+				Tag:       t,
+				Validator: validator,
 			}
 
 			if len(c) == 2 {
@@ -115,21 +158,17 @@ func loadMetadataFromType(structName string, structType reflect.Type) (*structMe
 				}
 
 				if arg, err := strconv.Atoi(rawArg); err == nil {
-					vm.arg = arg
+					vm.Arg = arg
 				} else if arg, err := strconv.ParseFloat(rawArg, 64); err == nil {
-					vm.arg = arg
+					vm.Arg = arg
 				} else {
-					vm.arg = strings.Trim(rawArg, `"' `)
+					vm.Arg = strings.Trim(rawArg, `"'`)
 				}
 			}
 
-			fm.validators = append(fm.validators, vm)
+			fm.Validators = append(fm.Validators, vm)
 		}
 	}
 
 	return metadata, nil
-}
-
-func LoadFiles(filePath ...string) error {
-	return nil
 }

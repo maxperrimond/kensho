@@ -11,6 +11,10 @@ const (
 )
 
 func regexValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) (bool, error) {
+	if value == nil {
+		return true, nil
+	}
+
 	ok, err := stringValidator(ctx, subject, value, arg)
 	if !ok {
 		return false, err
@@ -26,4 +30,8 @@ func regexValidator(ctx context.Context, subject interface{}, value interface{},
 
 func emailValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) (bool, error) {
 	return regexValidator(ctx, subject, value, email)
+}
+
+func uuidValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) (bool, error) {
+	return regexValidator(ctx, subject, value, uuid)
 }

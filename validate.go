@@ -7,9 +7,8 @@ import (
 
 	"strconv"
 
+	"errors"
 	"sync"
-
-	"github.com/pkg/errors"
 )
 
 func Validate(subject interface{}) (bool, *ValidationError) {
@@ -41,22 +40,25 @@ func validateStruct(ctx context.Context, val reflect.Value) *ValidationError {
 
 	sm, err := getStructMetadata(val.Interface())
 	if err != nil {
-		panic(errors.Wrap(err, fmt.Sprintf("Unable to get validations rules for %T", val.Interface())))
+		panic(errors.New(fmt.Sprintf("Unable to get validations rules for %T because %s", val.Interface(), err.Error())))
 	}
 
 	validErr := &ValidationError{
 		Fields: make(map[string]*ValidationError),
 	}
-	for field, sfm := range sm.fields {
+	validErrMtx := sync.Mutex{}
+	for field, sfm := range sm.Fields {
 		wg.Add(1)
 
-		go func(fieldName string, fieldVal reflect.Value, metadata *fieldMetadata) {
+		go func(fieldName string, fieldVal reflect.Value, metadata *FieldMetadata) {
 			defer wg.Done()
 
 			if fieldValidErr := validateValue(ctx, val, fieldVal, metadata); fieldValidErr != nil {
+				validErrMtx.Lock()
 				validErr.Fields[fieldName] = fieldValidErr
+				validErrMtx.Unlock()
 			}
-		}(field, val.FieldByIndex(sfm.sfType.Index), sfm)
+		}(field, val.FieldByName(sfm.FieldName), sfm)
 	}
 
 	wg.Wait()
@@ -74,6 +76,7 @@ func validateList(ctx context.Context, val reflect.Value) *ValidationError {
 	validErr := &ValidationError{
 		Fields: make(map[string]*ValidationError),
 	}
+	validErrMtx := sync.Mutex{}
 	for i := 0; i < val.Len(); i++ {
 		wg.Add(1)
 
@@ -81,6 +84,10 @@ func validateList(ctx context.Context, val reflect.Value) *ValidationError {
 			defer wg.Done()
 
 			var itemValidErr *ValidationError
+
+			if itemVal.Kind() == reflect.Interface || itemVal.Kind() == reflect.Ptr {
+				itemVal = itemVal.Elem()
+			}
 
 			switch itemVal.Type().Kind() {
 			case reflect.Array, reflect.Slice:
@@ -92,7 +99,9 @@ func validateList(ctx context.Context, val reflect.Value) *ValidationError {
 			}
 
 			if itemValidErr != nil {
+				validErrMtx.Lock()
 				validErr.Fields[fieldName] = itemValidErr
+				validErrMtx.Unlock()
 			}
 		}(strconv.Itoa(i), val.Index(i))
 	}
@@ -106,69 +115,78 @@ func validateList(ctx context.Context, val reflect.Value) *ValidationError {
 	return nil
 }
 
-func validateValue(ctx context.Context, val reflect.Value, fieldVal reflect.Value, metadata *fieldMetadata) *ValidationError {
+func validateValue(ctx context.Context, val reflect.Value, fieldVal reflect.Value, metadata *FieldMetadata) *ValidationError {
+	switch fieldVal.Type().Kind() {
+	case reflect.Array, reflect.Slice:
+		return validateArrayValue(ctx, val, fieldVal, metadata)
+	}
+
 	validErr := &ValidationError{
 		Fields: make(map[string]*ValidationError),
+	}
+
+	for _, vm := range metadata.Validators {
+		ok, err := vm.Validator(ctx, val.Interface(), fieldVal.Interface(), vm.Arg)
+		if !ok {
+			validErr.Errors = append(validErr.Errors, errorBuilder(vm.Tag, vm.Arg, err))
+		}
 	}
 
 	if fieldVal.Kind() == reflect.Interface || fieldVal.Kind() == reflect.Ptr {
 		fieldVal = fieldVal.Elem()
 	}
 
-	switch fieldVal.Type().Kind() {
-	case reflect.Array, reflect.Slice:
-		itemMetadata := &fieldMetadata{
-			fieldName: metadata.fieldName,
-			sfType:    metadata.sfType,
-		}
-
-		for _, vm := range metadata.validators {
-			switch vm.validatorName {
-			case "required", "min", "max":
-				ok, err := vm.validator(ctx, val.Interface(), fieldVal.Interface(), vm.arg)
-				if !ok {
-					if err == nil {
-						err = errors.New(fmt.Sprintf("Not validated as %s", vm.validatorName))
-					}
-
-					validErr.Errors = append(validErr.Errors, err.Error())
-				}
-			default:
-				itemMetadata.validators = append(itemMetadata.validators, vm)
-			}
-		}
-
-		var wg sync.WaitGroup
-		for i := 0; i < fieldVal.Len(); i++ {
-			wg.Add(1)
-
-			go func(fieldName string, itemVal reflect.Value) {
-				defer wg.Done()
-
-				if itemValidErr := validateValue(ctx, val, itemVal, itemMetadata); itemValidErr != nil {
-					validErr.Fields[fieldName] = itemValidErr
-				}
-			}(strconv.Itoa(i), fieldVal.Index(i))
-		}
-
-		wg.Wait()
-	case reflect.Struct:
+	if fieldVal.Kind() == reflect.Struct {
 		structValErr := validateStruct(ctx, fieldVal)
 		if structValErr != nil {
 			validErr.Fields = structValErr.Fields
 		}
-	default:
-		for _, vm := range metadata.validators {
-			ok, err := vm.validator(ctx, val.Interface(), fieldVal.Interface(), vm.arg)
-			if !ok {
-				if err == nil {
-					err = errors.New(fmt.Sprintf("Not validated as %s", vm.validatorName))
-				}
+	}
 
-				validErr.Errors = append(validErr.Errors, err.Error())
+	if len(validErr.Errors) > 0 || len(validErr.Fields) > 0 {
+		return validErr
+	}
+
+	return nil
+}
+
+func validateArrayValue(ctx context.Context, val reflect.Value, fieldVal reflect.Value, metadata *FieldMetadata) *ValidationError {
+	validErr := &ValidationError{
+		Fields: make(map[string]*ValidationError),
+	}
+	validErrMtx := sync.Mutex{}
+
+	itemMetadata := &FieldMetadata{
+		FieldName: metadata.FieldName,
+	}
+	for _, vm := range metadata.Validators {
+		switch vm.Tag {
+		case "required", "min", "max":
+			ok, err := vm.Validator(ctx, val.Interface(), fieldVal.Interface(), vm.Arg)
+			if !ok {
+				validErr.Errors = append(validErr.Errors, errorBuilder(vm.Tag, vm.Arg, err))
 			}
+		default:
+			itemMetadata.Validators = append(itemMetadata.Validators, vm)
 		}
 	}
+
+	var wg sync.WaitGroup
+	for i := 0; i < fieldVal.Len(); i++ {
+		wg.Add(1)
+
+		go func(fieldName string, itemVal reflect.Value) {
+			defer wg.Done()
+
+			if itemValidErr := validateValue(ctx, val, itemVal, itemMetadata); itemValidErr != nil {
+				validErrMtx.Lock()
+				validErr.Fields[fieldName] = itemValidErr
+				validErrMtx.Unlock()
+			}
+		}(strconv.Itoa(i), fieldVal.Index(i))
+	}
+
+	wg.Wait()
 
 	if len(validErr.Errors) > 0 || len(validErr.Fields) > 0 {
 		return validErr

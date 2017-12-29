@@ -1,0 +1,18 @@
+{
+  "User": {
+    "Email": [
+      "required",
+      "email"
+    ],
+    "FirstName": [
+      "required",
+      {"min": 2},
+      {"max": 64}
+    ],
+    "LastName": [
+      "required",
+      {"min": 2},
+      {"max": 64}
+    ]
+  }
+}

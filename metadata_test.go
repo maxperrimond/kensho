@@ -6,6 +6,8 @@ import (
 )
 
 func Test_loadMetadataFromType(t *testing.T) {
+	t.Parallel()
+
 	type foo struct {
 		Foo  string `valid:"required,max=30"`
 		Foo2 string `valid:""`
@@ -20,46 +22,46 @@ func Test_loadMetadataFromType(t *testing.T) {
 		t.Fatalf("Metadata loader failed and return this error: %s", err)
 	}
 
-	if metadata.structName != "foo2" {
-		t.Errorf("Struct name is invalid, got: %s", metadata.structName)
+	if metadata.StructName != "foo2" {
+		t.Errorf("Struct name is invalid, got: %s", metadata.StructName)
 	}
 
 	var tests = []struct {
 		fieldName  string
-		validators []*validatorMetadata
+		validators []*ValidatorMetadata
 	}{
 		{
 			"Foo",
-			[]*validatorMetadata{
+			[]*ValidatorMetadata{
 				{
-					validatorName: "required",
-					arg:           nil,
+					Tag: "required",
+					Arg: nil,
 				},
 				{
-					validatorName: "max",
-					arg:           30,
+					Tag: "max",
+					Arg: 30,
 				},
 			},
 		},
 		{
 			"Foo3",
-			[]*validatorMetadata{
+			[]*ValidatorMetadata{
 				{
-					validatorName: "required",
-					arg:           nil,
+					Tag: "required",
+					Arg: nil,
 				},
 				{
-					validatorName: "min",
-					arg:           5,
+					Tag: "min",
+					Arg: 5,
 				},
 			},
 		},
 		{
 			"Foo4",
-			[]*validatorMetadata{
+			[]*ValidatorMetadata{
 				{
-					validatorName: "regex",
-					arg:           "^[a-z+]$",
+					Tag: "regex",
+					Arg: "^[a-z+]$",
 				},
 			},
 		},
@@ -67,18 +69,18 @@ func Test_loadMetadataFromType(t *testing.T) {
 
 	for _, test := range tests {
 		found := false
-		for _, fm := range metadata.fields {
-			if fm.fieldName == test.fieldName {
+		for _, fm := range metadata.Fields {
+			if fm.FieldName == test.fieldName {
 				found = true
 
 				for _, expectedValid := range test.validators {
 					vFound := false
-					for _, valid := range fm.validators {
-						if expectedValid.validatorName == valid.validatorName {
+					for _, valid := range fm.Validators {
+						if expectedValid.Tag == valid.Tag {
 							vFound = true
 
-							if expectedValid.arg != valid.arg {
-								t.Errorf("Field metadata have wrong argument, expected: %T(%v), actual: %T(%v)", expectedValid.arg, expectedValid.arg, valid.arg, valid.arg)
+							if expectedValid.Arg != valid.Arg {
+								t.Errorf("Field metadata have wrong argument, expected: %T(%v), actual: %T(%v)", expectedValid.Arg, expectedValid.Arg, valid.Arg, valid.Arg)
 							}
 
 							break
@@ -86,7 +88,7 @@ func Test_loadMetadataFromType(t *testing.T) {
 					}
 
 					if !vFound {
-						t.Errorf("Field validator %s not found in field metadata", expectedValid.validatorName)
+						t.Errorf("Field validator %s not found in field metadata", expectedValid.Tag)
 					}
 				}
 
@@ -101,6 +103,8 @@ func Test_loadMetadataFromType(t *testing.T) {
 }
 
 func Test_loadMetadataFromType_wrongTag(t *testing.T) {
+	t.Parallel()
+
 	type foo struct {
 		Foo string `valid:"foo2"`
 	}
@@ -110,5 +114,13 @@ func Test_loadMetadataFromType_wrongTag(t *testing.T) {
 	_, err := loadMetadataFromType("foo2", fooType)
 	if err == nil {
 		t.Error("Metadata loader should failed")
+	}
+}
+
+func TestLoadFiles(t *testing.T) {
+	LoadFiles("test/*.json")
+
+	if len(metadataList) != 1 {
+		t.Errorf("Nb of metadata expexted: %d, actual: %d", 1, len(metadataList))
 	}
 }

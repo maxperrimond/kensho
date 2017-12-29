@@ -7,15 +7,18 @@ type (
 )
 
 var validators = map[string]Validator{
+	"valid":    validValidator,
 	"string":   stringValidator,
 	"struct":   structValidator,
 	"required": requiredValidator,
+	"length":   lengthValidator,
 	"min":      minValidator,
 	"max":      maxValidator,
 	"regex":    regexValidator,
 	"email":    emailValidator,
+	"uuid":     uuidValidator,
 }
 
-func RegisterValidator(name string, validator Validator) {
-	validators[name] = validator
+func AddValidator(tag string, validator Validator) {
+	validators[tag] = validator
 }
