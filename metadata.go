@@ -13,7 +13,6 @@ import (
 
 	"os"
 
-	"errors"
 	"io/ioutil"
 )
 
@@ -143,7 +142,7 @@ func loadMetadataFromType(structName string, structType reflect.Type) (*StructMe
 
 			validator, ok := validators[t]
 			if !ok {
-				return nil, errors.New(fmt.Sprintf("validator %s doesn't exists", t))
+				return nil, fmt.Errorf("validator %s doesn't exists", t)
 			}
 
 			vm := &ValidatorMetadata{

@@ -58,7 +58,7 @@ func lengthValidator(ctx context.Context, subject interface{}, value interface{}
 
 	length, ok := arg.(int)
 	if !ok {
-		return false, errors.New(fmt.Sprintf("invalid argument to length: %v", length))
+		return false, fmt.Errorf("invalid argument to length: %v", length)
 	}
 
 	switch reflect.TypeOf(value).Kind() {
@@ -76,7 +76,7 @@ func minValidator(ctx context.Context, subject interface{}, value interface{}, a
 
 	min, ok := arg.(int)
 	if !ok {
-		return false, errors.New(fmt.Sprintf("invalid argument to min: %v", min))
+		return false, fmt.Errorf("invalid argument to min: %v", min)
 	}
 
 	switch reflect.TypeOf(value).Kind() {
@@ -94,7 +94,7 @@ func maxValidator(ctx context.Context, subject interface{}, value interface{}, a
 
 	max, ok := arg.(int)
 	if !ok {
-		return false, errors.New(fmt.Sprintf("invalid argument to max: %v", max))
+		return false, fmt.Errorf("invalid argument to max: %v", max)
 	}
 
 	switch reflect.TypeOf(value).Kind() {

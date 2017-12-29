@@ -7,7 +7,6 @@ import (
 
 	"strconv"
 
-	"errors"
 	"sync"
 )
 
@@ -40,7 +39,7 @@ func validateStruct(ctx context.Context, val reflect.Value) *ValidationError {
 
 	sm, err := getStructMetadata(val.Interface())
 	if err != nil {
-		panic(errors.New(fmt.Sprintf("Unable to get validations rules for %T because %s", val.Interface(), err.Error())))
+		panic(fmt.Sprintf("Unable to get validations rules for %T because %s", val.Interface(), err.Error()))
 	}
 
 	validErr := &ValidationError{
