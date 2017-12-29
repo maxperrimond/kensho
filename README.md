@@ -6,6 +6,8 @@
 
 ## Usage
 
+Before any explanation, here a simple example:
+
 ```go
 package main
 

@@ -117,6 +117,10 @@ func validateValue(ctx context.Context, val reflect.Value, fieldVal reflect.Valu
 
 	switch fieldVal.Type().Kind() {
 	case reflect.Array, reflect.Slice:
+		itemMetadata := &fieldMetadata{
+			fieldName: metadata.fieldName,
+			sfType:    metadata.sfType,
+		}
 
 		for _, vm := range metadata.validators {
 			switch vm.validatorName {
@@ -129,6 +133,8 @@ func validateValue(ctx context.Context, val reflect.Value, fieldVal reflect.Valu
 
 					validErr.Errors = append(validErr.Errors, err.Error())
 				}
+			default:
+				itemMetadata.validators = append(itemMetadata.validators, vm)
 			}
 		}
 
@@ -139,7 +145,7 @@ func validateValue(ctx context.Context, val reflect.Value, fieldVal reflect.Valu
 			go func(fieldName string, itemVal reflect.Value) {
 				defer wg.Done()
 
-				if itemValidErr := validateValue(ctx, val, itemVal, metadata); itemValidErr != nil {
+				if itemValidErr := validateValue(ctx, val, itemVal, itemMetadata); itemValidErr != nil {
 					validErr.Fields[fieldName] = itemValidErr
 				}
 			}(strconv.Itoa(i), fieldVal.Index(i))
