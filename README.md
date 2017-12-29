@@ -2,7 +2,7 @@
 
 ## Installation
 
-    TODO
+    go get github.com/maxperrimond/kensho
 
 ## Usage
 
