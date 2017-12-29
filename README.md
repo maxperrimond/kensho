@@ -31,8 +31,8 @@ import (
 )
 
 type Group struct {
-    Name  string  `valid:"required"`
-    Users []*User `valid:"valid"` // Ask to valid users if there is some
+	Name  string  `valid:"required"`
+	Users []*User `valid:"valid"` // Ask to valid users if there is some
 }
 
 type User struct {
@@ -49,7 +49,7 @@ func main() {
 		LastName:  "bar",
 	}
 
-    // Validate user
+	// Validate user
 	ok, _ := kensho.Validate(user)
 
 	fmt.Printf("Result: %t\n", ok)
@@ -57,7 +57,7 @@ func main() {
 	user.Email = "this is not an email"
 	user.FirstName = ""
 
-    // Validate user after inserting bad data
+	// Validate user after inserting bad data
 	ok, err := kensho.Validate(user)
 
 	fmt.Printf("Result: %t\n", ok)
@@ -66,34 +66,34 @@ func main() {
 
 	users := []*User{
 		{
-            Email:     "john@example.com",
-            FirstName: "john",
-            LastName:  "bar",
-        },
-        {
-            Email:     "pierre@example.com",
-            FirstName: "pierre",
-            LastName:  "bar",
-        },
+			Email:     "john@example.com",
+			FirstName: "john",
+			LastName:  "bar",
+		},
+		{
+			Email:     "pierre@example.com",
+			FirstName: "pierre",
+			LastName:  "bar",
+		},
 	}
 
-    // Validate collection of users
+	// Validate collection of users
 	ok, _ = kensho.Validate(users)
 
-    fmt.Printf("Result: %t\n", ok)
+	fmt.Printf("Result: %t\n", ok)
 
 	// Nested struct
-    group := &Group{
-    	Name:  "foo",
-    	Users: append(users, user), // With the bad user
-    }
+	group := &Group{
+		Name:  "foo",
+		Users: append(users, user), // With the bad user
+	}
 
-    // Validate the group
-    ok, err = kensho.Validate(group)
+	// Validate the group
+	ok, err = kensho.Validate(group)
 
-    fmt.Printf("Result: %t\n", ok)
-    fmt.Printf("Email errors: %v\n", err.Fields["Users"].Fields["2"].Fields["Email"].Errors)
-    fmt.Printf("First name errors: %v\n", err.Fields["Users"].Fields["2"].Fields["FirstName"].Errors)
+	fmt.Printf("Result: %t\n", ok)
+	fmt.Printf("Email errors: %v\n", err.Fields["Users"].Fields["2"].Fields["Email"].Errors)
+	fmt.Printf("First name errors: %v\n", err.Fields["Users"].Fields["2"].Fields["FirstName"].Errors)
 }
 ```
 
