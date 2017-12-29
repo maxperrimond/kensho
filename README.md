@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/maxperrimond/kensho.svg?branch=master)](https://travis-ci.org/maxperrimond/kensho)
 [![Coverage Status](https://coveralls.io/repos/github/maxperrimond/kensho/badge.svg?branch=master)](https://coveralls.io/github/maxperrimond/kensho?branch=master)
+[![Go Report Card](https://goreportcard.com/badge/github.com/maxperrimond/kensho)](https://goreportcard.com/report/github.com/maxperrimond/kensho)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **A *Work in progress* project so the `master` branch might change in the future and BC breaks some part or change some behaviors.**
