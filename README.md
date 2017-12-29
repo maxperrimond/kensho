@@ -1,8 +1,8 @@
 # Kensho - A Go validator
 
-**This project is on *Work in progress* so the `master` branch might change change in the future and BC break some part or change some behaviors.**
+**A *Work in progress* project so the `master` branch might change in the future and BC breaks some part or change some behaviors.**
 
-A simple go library for validation but gives the possibility to validate deeply, collections, any field type of struct by following tag or file.
+A simple Go library for validation, but gives the possibility to validate deeply, collections, any field type of struct by following tag or file.
 
 ## Features
 
