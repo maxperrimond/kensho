@@ -20,6 +20,10 @@ func regexValidator(ctx context.Context, subject interface{}, value interface{},
 		return false, err
 	}
 
+	if value == "" {
+		return true, nil
+	}
+
 	pattern, ok := arg.(string)
 	if !ok {
 		return false, missingPattern
