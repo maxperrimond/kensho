@@ -72,6 +72,17 @@ func LoadFiles(patterns ...string) error {
 			}
 
 			for _, metadata := range result {
+				for _, field := range metadata.Fields {
+					for _, val := range field.Validators {
+						validator, ok := validators[val.Tag]
+						if !ok {
+							return fmt.Errorf("validator %s doesn't exists", val.Tag)
+						}
+
+						val.Validator = validator
+					}
+				}
+
 				metadataList[metadata.StructName] = metadata
 			}
 		}
