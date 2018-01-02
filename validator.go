@@ -17,6 +17,7 @@ var validators = map[string]Validator{
 	"regex":    regexValidator,
 	"email":    emailValidator,
 	"uuid":     uuidValidator,
+	"iso3166":  iso3166Validator,
 }
 
 func AddValidator(tag string, validator Validator) {
