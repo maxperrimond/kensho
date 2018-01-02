@@ -47,12 +47,12 @@ func validateStruct(ctx context.Context, val reflect.Value) *ValidationError {
 	}
 	validErrMtx := sync.Mutex{}
 	for field, sfm := range sm.Fields {
-		wg.Add(1)
-
 		fieldVal := val.FieldByName(sfm.FieldName)
 		if !fieldVal.IsValid() {
 			continue
 		}
+
+		wg.Add(1)
 
 		go func(fieldName string, fieldVal reflect.Value, metadata *FieldMetadata) {
 			defer wg.Done()
