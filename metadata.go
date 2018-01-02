@@ -73,7 +73,6 @@ func LoadFiles(patterns ...string) error {
 
 			for _, metadata := range result {
 				metadataList[metadata.StructName] = metadata
-				// TODO: Add verbosity
 			}
 		}
 	}
