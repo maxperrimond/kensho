@@ -49,6 +49,11 @@ func validateStruct(ctx context.Context, val reflect.Value) *ValidationError {
 	for field, sfm := range sm.Fields {
 		wg.Add(1)
 
+		fieldVal := val.FieldByName(sfm.FieldName)
+		if !fieldVal.IsValid() {
+			continue
+		}
+
 		go func(fieldName string, fieldVal reflect.Value, metadata *FieldMetadata) {
 			defer wg.Done()
 
@@ -57,7 +62,7 @@ func validateStruct(ctx context.Context, val reflect.Value) *ValidationError {
 				validErr.Fields[fieldName] = fieldValidErr
 				validErrMtx.Unlock()
 			}
-		}(field, val.FieldByName(sfm.FieldName), sfm)
+		}(field, fieldVal, sfm)
 	}
 
 	wg.Wait()
