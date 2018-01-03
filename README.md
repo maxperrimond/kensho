@@ -9,6 +9,12 @@
 
 A simple Go library for validation, but gives the possibility to validate deeply, collections, any field type of struct by following tag or file.
 
+## TODO
+
+ - More docs/examples
+ - More tests
+ - Add validators
+
 ## Features
 
  - Struct validation
@@ -106,18 +112,19 @@ func main() {
 
 Tag | Arg | Description
 --- | --- | ---
-valid | | Useful tag to force nested validation if you no need to validate the struct if self.
-string | | If it's string
-struct | | If it's struct
+valid | | Validate nested struct
+string | | Check is string
+struct | | Check is struct
 required | | Is required
-length | int | Check the given length
-min | int | Check if it has the required min length
-max | int | Check if it has the required max length
-regex | string (regex pattern) | Match the given pattern
-email | | Match if it's an email
-uuid | | Match if it's an UUID
+length | int | Match length
+min | int | Match min length
+max | int | Match max length
+regex | string (regex pattern) | Match pattern
+email | | Match email
+uuid | | Match UUID
+iso3166 | optional: `num`, `alpha3`, `alpha2` (default) | Match country code based on [IS03166](https://en.wikipedia.org/wiki/ISO_3166)
 
-For now
+And more to come
 
 ### Custom validator
 

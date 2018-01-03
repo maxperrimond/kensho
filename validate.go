@@ -129,7 +129,12 @@ func validateValue(ctx context.Context, val reflect.Value, fieldVal reflect.Valu
 		Fields: make(map[string]*ValidationError),
 	}
 
+	var nested bool
 	for _, vm := range metadata.Validators {
+		if vm.Tag == "valid" {
+			nested = true
+		}
+
 		ok, err := vm.Validator(ctx, val.Interface(), fieldVal.Interface(), vm.Arg)
 		if !ok {
 			validErr.Errors = append(validErr.Errors, errorBuilder(vm.Tag, vm.Arg, err))
@@ -140,7 +145,7 @@ func validateValue(ctx context.Context, val reflect.Value, fieldVal reflect.Valu
 		fieldVal = fieldVal.Elem()
 	}
 
-	if fieldVal.Kind() == reflect.Struct {
+	if nested && fieldVal.Kind() == reflect.Struct {
 		structValErr := validateStruct(ctx, fieldVal)
 		if structValErr != nil {
 			validErr.Fields = structValErr.Fields
@@ -165,7 +170,7 @@ func validateArrayValue(ctx context.Context, val reflect.Value, fieldVal reflect
 	}
 	for _, vm := range metadata.Validators {
 		switch vm.Tag {
-		case "required", "min", "max":
+		case "required", "min", "max", "length":
 			ok, err := vm.Validator(ctx, val.Interface(), fieldVal.Interface(), vm.Arg)
 			if !ok {
 				validErr.Errors = append(validErr.Errors, errorBuilder(vm.Tag, vm.Arg, err))

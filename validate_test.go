@@ -128,7 +128,7 @@ func BenchmarkValidate(b *testing.B) {
 	type someStruct struct {
 		String  string        `valid:"required,min=2"`
 		String2 *string       `valid:"min=10"`
-		Child   []*someStruct `valid:"required"`
+		Child   []*someStruct `valid:"required,valid"`
 	}
 
 	data := make([]*someStruct, 1000)
