@@ -17,6 +17,7 @@ var validators = map[string]Validator{
 	"regex":    regexValidator,
 	"email":    emailValidator,
 	"uuid":     uuidValidator,
+	"colorHex": colorHexValidator,
 	"iso3166":  iso3166Validator,
 }
 
