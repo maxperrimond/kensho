@@ -137,7 +137,7 @@ func validateValue(ctx context.Context, val reflect.Value, fieldVal reflect.Valu
 
 		ok, err := vm.Validator(ctx, val.Interface(), fieldVal.Interface(), vm.Arg)
 		if !ok {
-			validErr.Errors = append(validErr.Errors, errorBuilder(vm.Tag, vm.Arg, err))
+			validErr.Errors = append(validErr.Errors, errorTranslator(vm.Tag, vm.Arg, err))
 		}
 	}
 
@@ -173,7 +173,7 @@ func validateArrayValue(ctx context.Context, val reflect.Value, fieldVal reflect
 		case "required", "min", "max", "length":
 			ok, err := vm.Validator(ctx, val.Interface(), fieldVal.Interface(), vm.Arg)
 			if !ok {
-				validErr.Errors = append(validErr.Errors, errorBuilder(vm.Tag, vm.Arg, err))
+				validErr.Errors = append(validErr.Errors, errorTranslator(vm.Tag, vm.Arg, err))
 			}
 		default:
 			itemMetadata.Validators = append(itemMetadata.Validators, vm)
