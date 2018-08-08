@@ -34,10 +34,7 @@ func validWithRegex(ctx context.Context, subject interface{}, value interface{},
 		return nil
 	}
 
-	return &Error{
-		Message: TranslateError("not_match_regex", nil),
-		Error:   "not_match_regex",
-	}
+	return error
 }
 
 func regexValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
