@@ -56,7 +56,7 @@ func validateStruct(ctx context.Context, path string, val reflect.Value) Violati
 		go func(fieldName string, fieldVal reflect.Value, metadata *FieldMetadata) {
 			defer wg.Done()
 
-			if valueViolations := validateValue(ctx, appendPath(path, field), val, fieldVal, metadata); valueViolations != nil {
+			if valueViolations := validateValue(ctx, appendPath(path, fieldName), val, fieldVal, metadata); valueViolations != nil {
 				violationsMtx.Lock()
 				violations = append(violations, valueViolations...)
 				violationsMtx.Unlock()
