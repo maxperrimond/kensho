@@ -2,18 +2,17 @@ package kensho
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"reflect"
 )
 
-func validValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) (bool, error) {
-	return true, nil
+func validValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
+	return nil
 }
 
-func structValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) (bool, error) {
+func structValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
 	if value == nil {
-		return false, nil
+		return nil
 	}
 
 	t := reflect.TypeOf(value)
@@ -21,86 +20,137 @@ func structValidator(ctx context.Context, subject interface{}, value interface{}
 		t = t.Elem()
 	}
 
-	return t.Kind() == reflect.Struct, nil
-}
-
-func stringValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) (bool, error) {
-	if value == nil {
-		return false, nil
+	if t.Kind() != reflect.Struct {
+		return &Error{
+			Message: TranslateError("not_struct", nil),
+			Error:   "not_struct",
+		}
 	}
 
-	return reflect.TypeOf(value).Kind() == reflect.String, nil
+	return nil
 }
 
-func requiredValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) (bool, error) {
+func stringValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
+	if value == nil {
+		return nil
+	}
+
+	t := reflect.TypeOf(value)
+	if t.Kind() == reflect.Ptr || t.Kind() == reflect.Interface {
+		t = t.Elem()
+	}
+
+	if t.Kind() != reflect.String {
+		return &Error{
+			Message: TranslateError("not_string", nil),
+			Error:   "not_string",
+		}
+	}
+
+	return nil
+}
+
+func requiredValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
 	if value != nil {
 		switch reflect.TypeOf(value).Kind() {
 		case reflect.String:
 			if len(value.(string)) > 0 {
-				return true, nil
+				return nil
 			}
 		case reflect.Array, reflect.Slice, reflect.Map, reflect.Ptr, reflect.Interface:
 			if !reflect.ValueOf(value).IsNil() {
-				return true, nil
+				return nil
 			}
 		default:
-			return true, nil
+			return nil
 		}
 	}
 
-	return false, errors.New("Is required")
+	return &Error{
+		Message: TranslateError("is_required", nil),
+		Error:   "is_required",
+	}
 }
 
-func lengthValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) (bool, error) {
+func lengthValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
 	if value == nil {
-		return true, nil
+		return nil
 	}
 
 	length, ok := arg.(int)
 	if !ok {
-		return false, fmt.Errorf("invalid argument to length: %v", length)
+		panic(fmt.Sprintf("invalid argument to length: %v", arg))
 	}
 
 	switch reflect.TypeOf(value).Kind() {
 	case reflect.String, reflect.Array, reflect.Slice, reflect.Map:
-		return reflect.ValueOf(value).Len() == length, nil
+		if reflect.ValueOf(value).Len() != length {
+			return &Error{
+				Message: TranslateError("invalid_length", map[string]interface{}{
+					"length": length,
+				}),
+				Error: "invalid_length",
+			}
+		}
+
+		return nil
 	default:
-		return false, nil
+		panic(fmt.Sprintf("expected a slice, map or string value"))
 	}
 }
 
-func minValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) (bool, error) {
+func minValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
 	if value == nil {
-		return true, nil
+		return nil
 	}
 
 	min, ok := arg.(int)
 	if !ok {
-		return false, fmt.Errorf("invalid argument to min: %v", min)
+		panic(fmt.Sprintf("invalid argument to min: %v", arg))
 	}
 
 	switch reflect.TypeOf(value).Kind() {
 	case reflect.String, reflect.Array, reflect.Slice, reflect.Map:
-		return reflect.ValueOf(value).Len() >= min, nil
+		if reflect.ValueOf(value).Len() < min {
+			return &Error{
+				Message: TranslateError("too_short", map[string]interface{}{
+					"min":    min,
+					"length": reflect.ValueOf(value).Len(),
+				}),
+				Error: "too_short",
+			}
+		}
+
+		return nil
 	default:
-		return false, nil
+		panic(fmt.Sprintf("expected a slice, map or string value"))
 	}
 }
 
-func maxValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) (bool, error) {
+func maxValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
 	if value == nil {
-		return true, nil
+		return nil
 	}
 
 	max, ok := arg.(int)
 	if !ok {
-		return false, fmt.Errorf("invalid argument to max: %v", max)
+		panic(fmt.Sprintf("invalid argument to max: %v", arg))
 	}
 
 	switch reflect.TypeOf(value).Kind() {
 	case reflect.String, reflect.Array, reflect.Slice, reflect.Map:
-		return reflect.ValueOf(value).Len() <= max, nil
+		if reflect.ValueOf(value).Len() > max {
+			return &Error{
+				Message: TranslateError("too_long", map[string]interface{}{
+					"max":    max,
+					"length": reflect.ValueOf(value).Len(),
+				}),
+				Error: "too_long",
+			}
+		}
+
+		return nil
 	default:
-		return false, nil
+		panic(fmt.Sprintf("expected a slice, map or string value"))
 	}
 }

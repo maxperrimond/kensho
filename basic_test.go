@@ -30,8 +30,8 @@ func Test_requiredValidator(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		ok, _ := requiredValidator(context.Background(), nil, test.subject, nil)
-		if ok != test.expected {
+		err := requiredValidator(context.Background(), nil, test.subject, nil)
+		if ok := err == nil; ok != test.expected {
 			t.Errorf("Expected from required validator: %t with %T(%v)", test.expected, test.subject, test.subject)
 		}
 	}
@@ -44,15 +44,17 @@ func Test_stringValidator(t *testing.T) {
 		subject  interface{}
 		expected bool
 	}{
-		{nil, false},
 		{0, false},
-		{(*string)(nil), false},
+		{0., false},
+		{struct{}{}, false},
+		{true, false},
 		{"", true},
+		{nil, true},
 	}
 
 	for _, test := range tests {
-		ok, _ := stringValidator(context.Background(), nil, test.subject, nil)
-		if ok != test.expected {
+		err := stringValidator(context.Background(), nil, test.subject, nil)
+		if ok := err == nil; ok != test.expected {
 			t.Errorf("Expected from string validator: %t with %T(%v)", test.expected, test.subject, test.subject)
 		}
 	}
@@ -65,16 +67,16 @@ func Test_structValidator(t *testing.T) {
 		subject  interface{}
 		expected bool
 	}{
-		{nil, false},
 		{"", false},
 		{(*struct{})(nil), true},
 		{&struct{}{}, true},
 		{struct{}{}, true},
+		{nil, true},
 	}
 
 	for _, test := range tests {
-		ok, _ := structValidator(context.Background(), nil, test.subject, nil)
-		if ok != test.expected {
+		err := structValidator(context.Background(), nil, test.subject, nil)
+		if ok := err == nil; ok != test.expected {
 			t.Errorf("Expected from struct validator: %t with %T(%v)", test.expected, test.subject, test.subject)
 		}
 	}

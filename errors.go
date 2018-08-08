@@ -1,41 +1,61 @@
 package kensho
 
 import (
-	"errors"
-	"fmt"
+	"strings"
 )
 
 type (
-	ValidationError struct {
-		Errors []string                    `json:"errors"`
-		Fields map[string]*ValidationError `json:"fields"`
+	Error struct {
+		Code       string                 `json:"code,omitempty"`
+		Error      string                 `json:"error"`
+		Message    string                 `json:"message,omitempty"`
+		Parameters map[string]interface{} `json:"parameters,omitempty"`
 	}
 
-	ErrorBuilder func(name string, arg interface{}, previous error) string
-)
-
-var errorBuilder ErrorBuilder
-
-var (
-	missingPattern = errors.New("the pattern is missing to validate with a regex")
-)
-
-func init() {
-	SetErrorBuilder(defaultErrorBuilder)
-}
-
-func SetErrorBuilder(builder ErrorBuilder) {
-	errorBuilder = builder
-}
-
-func defaultErrorBuilder(name string, arg interface{}, previous error) string {
-	var err string
-
-	if previous == nil {
-		err = fmt.Sprintf("not validated as %s", name)
-	} else {
-		err = previous.Error()
+	Violation struct {
+		Error
+		Path string `json:"path"`
 	}
 
-	return err
+	ViolationList []*Violation
+
+	FormError struct {
+		Errors []*Error              `json:"errors,omitempty"`
+		Fields map[string]*FormError `json:"fields,omitempty"`
+	}
+)
+
+func (violations ViolationList) Error() string {
+	return "" // TODO: formatted errors
+}
+
+func (violations *ViolationList) ToFormErrors() *FormError {
+	if len(*violations) == 0 {
+		return nil
+	}
+
+	formError := &FormError{}
+
+	for _, violation := range *violations {
+		cursor := formError
+
+		if violation.Path != "" {
+			fullPath := strings.Split(violation.Path, ".")
+			for _, path := range fullPath {
+				if cursor.Fields == nil {
+					cursor.Fields = map[string]*FormError{}
+				}
+
+				if _, has := cursor.Fields[path]; !has {
+					cursor.Fields[path] = &FormError{}
+				}
+
+				cursor = cursor.Fields[path]
+			}
+		}
+
+		cursor.Errors = append(cursor.Errors, &violation.Error)
+	}
+
+	return formError
 }

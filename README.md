@@ -23,6 +23,8 @@ A simple Go library for validation, but gives the possibility to validate deeply
  - Configuration from a file (ex: json)
  - Deep validation
  - List of struct validation
+ - Translation
+ - Different error structures (violation list, error tree)
 
 ## Installation
 
@@ -70,10 +72,12 @@ func main() {
 
 	// Validate user after inserting bad data
 	ok, err := kensho.Validate(user)
+	
+	formError := err.ToFormErrors()
 
 	fmt.Printf("Result: %t\n", ok)
-	fmt.Printf("Email errors: %v\n", err.Fields["Email"].Errors)
-	fmt.Printf("First name errors: %v\n", err.Fields["FirstName"].Errors)
+	fmt.Printf("Email errors: %v\n", formError.Fields["Email"].Errors)
+	fmt.Printf("First name errors: %v\n", formError.Fields["FirstName"].Errors)
 
 	users := []*User{
 		{
@@ -101,10 +105,12 @@ func main() {
 
 	// Validate the group
 	ok, err = kensho.Validate(group)
+	
+	formError = err.ToFormErrors()
 
 	fmt.Printf("Result: %t\n", ok)
-	fmt.Printf("Email errors: %v\n", err.Fields["Users"].Fields["2"].Fields["Email"].Errors)
-	fmt.Printf("First name errors: %v\n", err.Fields["Users"].Fields["2"].Fields["FirstName"].Errors)
+	fmt.Printf("Email errors: %v\n", formError.Fields["Users"].Fields["2"].Fields["Email"].Errors)
+	fmt.Printf("First name errors: %v\n", formError.Fields["Users"].Fields["2"].Fields["FirstName"].Errors)
 }
 ```
 
@@ -141,12 +147,15 @@ import (
 )
 
 // Define your validator
-func poneyValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) (bool, error) {
+func poneyValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *kensho.Error {
 	if value == "poney" {
-		return true, nil
+		return nil
 	}
 
-	return false, errors.New("this is not a poney!!!")
+	return &kensho.Error{
+		Error: "invalid_poney",
+		Message: "this is not a poney!!!",
+	}
 }
 
 func init() {

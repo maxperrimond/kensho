@@ -11,36 +11,59 @@ const (
 	colorHex = "^#(?:[0-9a-fA-F]{3}){1,2}$"
 )
 
-func regexValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) (bool, error) {
+func validWithRegex(ctx context.Context, subject interface{}, value interface{}, arg interface{}, error *Error) *Error {
 	if value == nil {
-		return true, nil
+		return nil
 	}
 
-	ok, err := stringValidator(ctx, subject, value, arg)
-	if !ok {
-		return false, err
+	err := stringValidator(ctx, subject, value, arg)
+	if err != nil {
+		return err
 	}
 
 	if value == "" {
-		return true, nil
+		return nil
 	}
 
 	pattern, ok := arg.(string)
 	if !ok {
-		return false, missingPattern
+		panic("the pattern is missing to validate with a regex")
 	}
 
-	return regexp.MustCompile(pattern).MatchString(value.(string)), nil
+	if regexp.MustCompile(pattern).MatchString(value.(string)) {
+		return nil
+	}
+
+	return &Error{
+		Message: TranslateError("not_match_regex", nil),
+		Error:   "not_match_regex",
+	}
 }
 
-func emailValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) (bool, error) {
-	return regexValidator(ctx, subject, value, email)
+func regexValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
+	return validWithRegex(ctx, subject, value, arg, &Error{
+		Message: TranslateError("not_match_regex", nil),
+		Error:   "not_match_regex",
+	})
 }
 
-func uuidValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) (bool, error) {
-	return regexValidator(ctx, subject, value, uuid)
+func emailValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
+	return validWithRegex(ctx, subject, value, email, &Error{
+		Message: TranslateError("invalid_email", nil),
+		Error:   "invalid_email",
+	})
 }
 
-func colorHexValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) (bool, error) {
-	return regexValidator(ctx, subject, value, colorHex)
+func uuidValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
+	return validWithRegex(ctx, subject, value, uuid, &Error{
+		Message: TranslateError("invalid_uuid", nil),
+		Error:   "invalid_uuid",
+	})
+}
+
+func colorHexValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
+	return validWithRegex(ctx, subject, value, colorHex, &Error{
+		Message: TranslateError("invalid_color", nil),
+		Error:   "invalid_color",
+	})
 }
