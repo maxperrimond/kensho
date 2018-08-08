@@ -23,8 +23,8 @@ func Test_iso3166Validator(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		ok, _ := iso3166Validator(context.TODO(), nil, test.subject, test.arg)
-		if ok != test.expected {
+		err := iso3166Validator(context.TODO(), nil, test.subject, test.arg)
+		if ok := err == nil; ok != test.expected {
 			t.Errorf("Expected from iso3166 validator: %t with %T(%v)", test.expected, test.subject, test.subject)
 		}
 	}

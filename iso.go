@@ -265,19 +265,19 @@ var iso3166List = []iso3166{
 	{"Zambia", "ZM", "ZMB", "894"},
 }
 
-func iso3166Validator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) (bool, error) {
+func iso3166Validator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
 	if value == nil {
-		return true, nil
+		return nil
 	}
 
-	ok, err := stringValidator(ctx, subject, value, arg)
-	if !ok {
-		return false, err
+	err := stringValidator(ctx, subject, value, arg)
+	if err != nil {
+		return err
 	}
 
 	str := value.(string)
 	if str == "" {
-		return true, nil
+		return nil
 	}
 
 	compare, _ := arg.(string)
@@ -285,18 +285,25 @@ func iso3166Validator(ctx context.Context, subject interface{}, value interface{
 		switch compare {
 		case "alpha3":
 			if country.Alpha3 == value {
-				return true, nil
+				return nil
 			}
 		case "num":
 			if country.Numeric == value {
-				return true, nil
+				return nil
 			}
 		default:
 			if country.Alpha2 == value {
-				return true, nil
+				return nil
 			}
 		}
 	}
 
-	return false, nil
+	return &Error{
+		Message: TranslateError("invalid_country", nil),
+		Error:   "invalid_country",
+		Parameters: map[string]interface{}{
+			"kind":  compare,
+			"value": value,
+		},
+	}
 }

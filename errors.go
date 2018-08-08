@@ -1,13 +1,7 @@
 package kensho
 
 import (
-	"errors"
-	"fmt"
-	"regexp"
-)
-
-var (
-	missingPattern = errors.New("the pattern is missing to validate with a regex")
+	"strings"
 )
 
 type (
@@ -26,14 +20,12 @@ type (
 	ViolationList []*Violation
 
 	FormError struct {
-		Errors []*Error              `json:"errors"`
+		Errors []*Error              `json:"errors,omitempty"`
 		Fields map[string]*FormError `json:"fields,omitempty"`
 	}
-
-	ErrorTranslator func(validator ValidatorMetadata, violation Violation) string
 )
 
-func (violations *ViolationList) Error() string {
+func (violations ViolationList) Error() string {
 	return "" // TODO: formatted errors
 }
 
@@ -45,27 +37,25 @@ func (violations *ViolationList) ToFormErrors() *FormError {
 	formError := &FormError{}
 
 	for _, violation := range *violations {
-		re := regexp.MustCompile(`/^(([^\.\[]++)|\[([^\]]++)\])(.*)/`)
-		re.FindAllString()
+		cursor := formError
+
+		if violation.Path != "" {
+			fullPath := strings.Split(violation.Path, ".")
+			for _, path := range fullPath {
+				if cursor.Fields == nil {
+					cursor.Fields = map[string]*FormError{}
+				}
+
+				if _, has := cursor.Fields[path]; !has {
+					cursor.Fields[path] = &FormError{}
+				}
+
+				cursor = cursor.Fields[path]
+			}
+		}
+
+		cursor.Errors = append(cursor.Errors, &violation.Error)
 	}
 
 	return formError
-}
-
-var errorTranslator ErrorTranslator
-
-func init() {
-	SetErrorTranslator(defaultErrorTranslator)
-}
-
-func SetErrorTranslator(builder ErrorTranslator) {
-	errorTranslator = builder
-}
-
-func defaultErrorTranslator(validator ValidatorMetadata, violation Violation) string {
-	if violation.Message != "" {
-		return violation.Message
-	}
-
-	return fmt.Sprintf("not validated as %s", validator.Tag)
 }

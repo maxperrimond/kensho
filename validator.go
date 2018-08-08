@@ -3,7 +3,7 @@ package kensho
 import "context"
 
 type (
-	Validator func(ctx context.Context, subject interface{}, value interface{}, arg interface{}) (bool, error)
+	Validator func(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error
 )
 
 var validators = map[string]Validator{

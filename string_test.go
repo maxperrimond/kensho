@@ -21,8 +21,8 @@ func Test_emailValidator(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		ok, _ := emailValidator(context.TODO(), nil, test.subject, nil)
-		if ok != test.expected {
+		err := emailValidator(context.TODO(), nil, test.subject, nil)
+		if ok := err == nil; ok != test.expected {
 			t.Errorf("Expected from email validator: %t with %T(%v)", test.expected, test.subject, test.subject)
 		}
 	}
@@ -45,8 +45,8 @@ func Test_uuidValidator(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		ok, _ := uuidValidator(context.TODO(), nil, test.subject, nil)
-		if ok != test.expected {
+		err := uuidValidator(context.TODO(), nil, test.subject, nil)
+		if ok := err == nil; ok != test.expected {
 			t.Errorf("Expected from email validator: %t with %T(%v)", test.expected, test.subject, test.subject)
 		}
 	}
