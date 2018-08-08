@@ -36,9 +36,11 @@ func main() {
 	// Validate user after inserting bad data
 	ok, err := kensho.Validate(user)
 
+	formError := err.ToFormErrors()
+
 	fmt.Printf("Result: %t\n", ok)
-	fmt.Printf("Email errors: %v\n", err.Fields["Email"].Errors)
-	fmt.Printf("First name errors: %v\n", err.Fields["FirstName"].Errors)
+	fmt.Printf("Email errors: %v\n", formError.Fields["Email"].Errors)
+	fmt.Printf("First name errors: %v\n", formError.Fields["FirstName"].Errors)
 
 	users := []*User{
 		{
@@ -67,7 +69,9 @@ func main() {
 	// Validate the group
 	ok, err = kensho.Validate(group)
 
+	formError = err.ToFormErrors()
+
 	fmt.Printf("Result: %t\n", ok)
-	fmt.Printf("Email errors: %v\n", err.Fields["Users"].Fields["2"].Fields["Email"].Errors)
-	fmt.Printf("First name errors: %v\n", err.Fields["Users"].Fields["2"].Fields["FirstName"].Errors)
+	fmt.Printf("Email errors: %v\n", formError.Fields["Users"].Fields["2"].Fields["Email"].Errors)
+	fmt.Printf("First name errors: %v\n", formError.Fields["Users"].Fields["2"].Fields["FirstName"].Errors)
 }

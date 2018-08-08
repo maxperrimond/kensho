@@ -106,7 +106,7 @@ func main() {
 	// Validate the group
 	ok, err = kensho.Validate(group)
 	
-	formError := err.ToFormErrors()
+	formError = err.ToFormErrors()
 
 	fmt.Printf("Result: %t\n", ok)
 	fmt.Printf("Email errors: %v\n", formError.Fields["Users"].Fields["2"].Fields["Email"].Errors)
