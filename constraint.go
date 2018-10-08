@@ -19,6 +19,9 @@ var defaultConstraints = map[string]Constraint{
 	"uuid":     UUIDConstraint,
 	"colorHex": ColorHexConstraint,
 	"iso3166":  ISO3166Constraint,
+	"country":  ISO3166Constraint,
+	"iso639":   ISO639Constraint,
+	"language": ISO639Constraint,
 }
 
 func AddConstraint(name string, constraint Constraint) {

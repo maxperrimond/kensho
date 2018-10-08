@@ -2,6 +2,8 @@ package kensho
 
 import (
 	"context"
+
+	"golang.org/x/text/language"
 )
 
 type (
@@ -306,4 +308,31 @@ func ISO3166Constraint(ctx context.Context, subject interface{}, value interface
 			"value": value,
 		},
 	}
+}
+
+func ISO639Constraint(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
+	if value == nil {
+		return nil
+	}
+
+	if err := StringConstraint(ctx, subject, value, arg); err != nil {
+		return err
+	}
+
+	str := value.(string)
+	if str == "" {
+		return nil
+	}
+
+	if _, err := language.Parse(value.(string)); err != nil {
+		return &Error{
+			Message: TranslateError("invalid_language", nil),
+			Error:   "invalid_language",
+			Parameters: map[string]interface{}{
+				"value": value,
+			},
+		}
+	}
+
+	return nil
 }
