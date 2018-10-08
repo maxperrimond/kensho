@@ -8,6 +8,8 @@ import (
 func Test_loadMetadataFromType(t *testing.T) {
 	t.Parallel()
 
+	validator := NewValidator()
+
 	type foo struct {
 		Foo  string `valid:"required,max=30"`
 		Foo2 string `valid:""`
@@ -17,7 +19,7 @@ func Test_loadMetadataFromType(t *testing.T) {
 
 	fooType := reflect.TypeOf(foo{})
 
-	metadata, err := loadMetadataFromType("foo2", fooType)
+	metadata, err := validator.loadMetadataFromType("foo2", fooType)
 	if err != nil {
 		t.Fatalf("Metadata loader failed and return this error: %s", err)
 	}
@@ -28,11 +30,11 @@ func Test_loadMetadataFromType(t *testing.T) {
 
 	var tests = []struct {
 		fieldName  string
-		validators []*ValidatorMetadata
+		validators []*ConstraintMetadata
 	}{
 		{
 			"Foo",
-			[]*ValidatorMetadata{
+			[]*ConstraintMetadata{
 				{
 					Tag: "required",
 					Arg: nil,
@@ -45,7 +47,7 @@ func Test_loadMetadataFromType(t *testing.T) {
 		},
 		{
 			"Foo3",
-			[]*ValidatorMetadata{
+			[]*ConstraintMetadata{
 				{
 					Tag: "required",
 					Arg: nil,
@@ -58,7 +60,7 @@ func Test_loadMetadataFromType(t *testing.T) {
 		},
 		{
 			"Foo4",
-			[]*ValidatorMetadata{
+			[]*ConstraintMetadata{
 				{
 					Tag: "regex",
 					Arg: "^[a-z+]$",
@@ -75,7 +77,7 @@ func Test_loadMetadataFromType(t *testing.T) {
 
 				for _, expectedValid := range test.validators {
 					vFound := false
-					for _, valid := range fm.Validators {
+					for _, valid := range fm.Constraints {
 						if expectedValid.Tag == valid.Tag {
 							vFound = true
 
@@ -111,16 +113,18 @@ func Test_loadMetadataFromType_wrongTag(t *testing.T) {
 
 	fooType := reflect.TypeOf(foo{})
 
-	_, err := loadMetadataFromType("foo2", fooType)
+	_, err := defaultValidator.loadMetadataFromType("foo2", fooType)
 	if err == nil {
 		t.Error("Metadata loader should failed")
 	}
 }
 
 func TestLoadFiles(t *testing.T) {
-	LoadFiles("test/*.json")
+	validator := NewValidator()
 
-	if len(metadataList) != 1 {
-		t.Errorf("Nb of metadata expexted: %d, actual: %d", 1, len(metadataList))
+	validator.LoadFiles("test/*.json")
+
+	if len(validator.metadata) != 1 {
+		t.Errorf("Nb of metadata expexted: %d, actual: %d", 1, len(validator.metadata))
 	}
 }

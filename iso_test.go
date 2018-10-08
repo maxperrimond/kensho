@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func Test_iso3166Validator(t *testing.T) {
+func Test_iso3166Constraint(t *testing.T) {
 	t.Parallel()
 
 	var tests = []struct {
@@ -23,9 +23,9 @@ func Test_iso3166Validator(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		err := iso3166Validator(context.TODO(), nil, test.subject, test.arg)
+		err := ISO3166Constraint(context.TODO(), nil, test.subject, test.arg)
 		if ok := err == nil; ok != test.expected {
-			t.Errorf("Expected from iso3166 validator: %t with %T(%v)", test.expected, test.subject, test.subject)
+			t.Errorf("Expected from iso3166 constraint: %t with %T(%v)", test.expected, test.subject, test.subject)
 		}
 	}
 }

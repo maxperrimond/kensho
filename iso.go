@@ -265,12 +265,12 @@ var iso3166List = []iso3166{
 	{"Zambia", "ZM", "ZMB", "894"},
 }
 
-func iso3166Validator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
+func ISO3166Constraint(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
 	if value == nil {
 		return nil
 	}
 
-	err := stringValidator(ctx, subject, value, arg)
+	err := StringConstraint(ctx, subject, value, arg)
 	if err != nil {
 		return err
 	}

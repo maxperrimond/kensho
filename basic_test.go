@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func Test_requiredValidator(t *testing.T) {
+func Test_requiredConstraint(t *testing.T) {
 	t.Parallel()
 
 	var tests = []struct {
@@ -30,14 +30,14 @@ func Test_requiredValidator(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		err := requiredValidator(context.Background(), nil, test.subject, nil)
+		err := RequiredConstraint(context.Background(), nil, test.subject, nil)
 		if ok := err == nil; ok != test.expected {
-			t.Errorf("Expected from required validator: %t with %T(%v)", test.expected, test.subject, test.subject)
+			t.Errorf("Expected from required constraint: %t with %T(%v)", test.expected, test.subject, test.subject)
 		}
 	}
 }
 
-func Test_stringValidator(t *testing.T) {
+func Test_stringConstraint(t *testing.T) {
 	t.Parallel()
 
 	var tests = []struct {
@@ -53,14 +53,14 @@ func Test_stringValidator(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		err := stringValidator(context.Background(), nil, test.subject, nil)
+		err := StringConstraint(context.Background(), nil, test.subject, nil)
 		if ok := err == nil; ok != test.expected {
-			t.Errorf("Expected from string validator: %t with %T(%v)", test.expected, test.subject, test.subject)
+			t.Errorf("Expected from string constraint: %t with %T(%v)", test.expected, test.subject, test.subject)
 		}
 	}
 }
 
-func Test_structValidator(t *testing.T) {
+func Test_structConstraint(t *testing.T) {
 	t.Parallel()
 
 	var tests = []struct {
@@ -75,9 +75,9 @@ func Test_structValidator(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		err := structValidator(context.Background(), nil, test.subject, nil)
+		err := StructConstraint(context.Background(), nil, test.subject, nil)
 		if ok := err == nil; ok != test.expected {
-			t.Errorf("Expected from struct validator: %t with %T(%v)", test.expected, test.subject, test.subject)
+			t.Errorf("Expected from struct constraint: %t with %T(%v)", test.expected, test.subject, test.subject)
 		}
 	}
 }

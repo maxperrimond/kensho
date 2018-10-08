@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func Test_emailValidator(t *testing.T) {
+func Test_emailConstraint(t *testing.T) {
 	t.Parallel()
 
 	var tests = []struct {
@@ -21,14 +21,14 @@ func Test_emailValidator(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		err := emailValidator(context.TODO(), nil, test.subject, nil)
+		err := EmailConstraint(context.TODO(), nil, test.subject, nil)
 		if ok := err == nil; ok != test.expected {
-			t.Errorf("Expected from email validator: %t with %T(%v)", test.expected, test.subject, test.subject)
+			t.Errorf("Expected from email constraint: %t with %T(%v)", test.expected, test.subject, test.subject)
 		}
 	}
 }
 
-func Test_uuidValidator(t *testing.T) {
+func Test_uuidConstraint(t *testing.T) {
 	t.Parallel()
 
 	var tests = []struct {
@@ -45,9 +45,9 @@ func Test_uuidValidator(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		err := uuidValidator(context.TODO(), nil, test.subject, nil)
+		err := UUIDConstraint(context.TODO(), nil, test.subject, nil)
 		if ok := err == nil; ok != test.expected {
-			t.Errorf("Expected from email validator: %t with %T(%v)", test.expected, test.subject, test.subject)
+			t.Errorf("Expected from email constraint: %t with %T(%v)", test.expected, test.subject, test.subject)
 		}
 	}
 }

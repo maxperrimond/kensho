@@ -6,11 +6,11 @@ import (
 	"reflect"
 )
 
-func validValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
+func validConstraint(_ context.Context, _ interface{}, _ interface{}, _ interface{}) *Error {
 	return nil
 }
 
-func structValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
+func StructConstraint(_ context.Context, _ interface{}, value interface{}, _ interface{}) *Error {
 	if value == nil {
 		return nil
 	}
@@ -30,7 +30,7 @@ func structValidator(ctx context.Context, subject interface{}, value interface{}
 	return nil
 }
 
-func stringValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
+func StringConstraint(_ context.Context, _ interface{}, value interface{}, arg interface{}) *Error {
 	if value == nil {
 		return nil
 	}
@@ -50,7 +50,7 @@ func stringValidator(ctx context.Context, subject interface{}, value interface{}
 	return nil
 }
 
-func requiredValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
+func RequiredConstraint(_ context.Context, _ interface{}, value interface{}, arg interface{}) *Error {
 	if value != nil {
 		switch reflect.TypeOf(value).Kind() {
 		case reflect.String:
@@ -72,7 +72,7 @@ func requiredValidator(ctx context.Context, subject interface{}, value interface
 	}
 }
 
-func lengthValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
+func LengthConstraint(_ context.Context, _ interface{}, value interface{}, arg interface{}) *Error {
 	if value == nil {
 		return nil
 	}
@@ -99,7 +99,7 @@ func lengthValidator(ctx context.Context, subject interface{}, value interface{}
 	}
 }
 
-func minValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
+func MinConstraint(_ context.Context, _ interface{}, value interface{}, arg interface{}) *Error {
 	if value == nil {
 		return nil
 	}
@@ -127,7 +127,7 @@ func minValidator(ctx context.Context, subject interface{}, value interface{}, a
 	}
 }
 
-func maxValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
+func MaxConstraint(_ context.Context, _ interface{}, value interface{}, arg interface{}) *Error {
 	if value == nil {
 		return nil
 	}

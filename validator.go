@@ -1,26 +1,48 @@
 package kensho
 
-import "context"
-
-type (
-	Validator func(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error
+import (
+	"sync"
 )
 
-var validators = map[string]Validator{
-	"valid":    validValidator,
-	"string":   stringValidator,
-	"struct":   structValidator,
-	"required": requiredValidator,
-	"length":   lengthValidator,
-	"min":      minValidator,
-	"max":      maxValidator,
-	"regex":    regexValidator,
-	"email":    emailValidator,
-	"uuid":     uuidValidator,
-	"colorHex": colorHexValidator,
-	"iso3166":  iso3166Validator,
+type (
+	Validator struct {
+		constraints map[string]Constraint
+		metadata    map[string]*StructMetadata
+		metadataMtx *sync.Mutex
+		parsers     map[string]Parser
+	}
+
+	CustomConstraint struct {
+		Name       string
+		Constraint Constraint
+	}
+)
+
+var defaultValidator = &Validator{
+	constraints: defaultConstraints,
+	metadata:    map[string]*StructMetadata{},
+	metadataMtx: &sync.Mutex{},
+	parsers: map[string]Parser{
+		"json": jsonParse,
+	},
 }
 
-func AddValidator(tag string, validator Validator) {
-	validators[tag] = validator
+func NewValidator(customConstraints ...CustomConstraint) *Validator {
+	constraints := map[string]Constraint{}
+
+	for name, constraint := range defaultConstraints {
+		constraints[name] = constraint
+	}
+	for _, customConstraint := range customConstraints {
+		constraints[customConstraint.Name] = customConstraint.Constraint
+	}
+
+	return &Validator{
+		constraints: constraints,
+		metadata:    map[string]*StructMetadata{},
+		metadataMtx: &sync.Mutex{},
+		parsers: map[string]Parser{
+			"json": jsonParse,
+		},
+	}
 }

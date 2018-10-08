@@ -1,4 +1,4 @@
-# Kensho - A Go validator
+# Kenshō - A Go validator
 
 [![Build Status](https://travis-ci.org/maxperrimond/kensho.svg?branch=master)](https://travis-ci.org/maxperrimond/kensho)
 [![Coverage Status](https://coveralls.io/repos/github/maxperrimond/kensho/badge.svg?branch=master)](https://coveralls.io/github/maxperrimond/kensho?branch=master)
@@ -18,7 +18,7 @@ A simple Go library for validation, but gives the possibility to validate deeply
 ## Features
 
  - Struct validation
- - Allow custom validator
+ - Able to add custom constraints
  - Validator argument
  - Configuration from a file (ex: json)
  - Deep validation
@@ -72,7 +72,7 @@ func main() {
 
 	// Validate user after inserting bad data
 	ok, err := kensho.Validate(user)
-	
+
 	formError := err.ToFormErrors()
 
 	fmt.Printf("Result: %t\n", ok)
@@ -114,7 +114,7 @@ func main() {
 }
 ```
 
-### Available validators
+### Available constraints
 
 Tag | Arg | Description
 --- | --- | ---
@@ -132,9 +132,7 @@ iso3166 | optional: `num`, `alpha3`, `alpha2` (default) | Match country code bas
 
 And more to come
 
-### Custom validator
-
-To add a new validator:
+### Custom constraint
 
 ```go
 package main
@@ -146,8 +144,8 @@ import (
 	"github.com/maxperrimond/kensho"
 )
 
-// Define your validator
-func poneyValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *kensho.Error {
+// Define your constraint
+func poneyConstraint(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *kensho.Error {
 	if value == "poney" {
 		return nil
 	}
@@ -160,7 +158,7 @@ func poneyValidator(ctx context.Context, subject interface{}, value interface{},
 
 func init() {
 	// add it with the tag of your choice
-    kensho.AddValidator("poney", poneyValidator)
+    kensho.AddConstraint("poney", poneyConstraint)
 }
 ```
 
@@ -169,13 +167,13 @@ param | Description
 ctx  | validation context
 subject | parent struct
 value | field value (or array value)
-arg | validator argument from struct configuration
+arg | constraint argument from struct configuration
 
 Note: If you use an existent tag, it will override it.
 
 ### Context
 
-You can pass a context during validation and can be used by any validator:
+You can pass a context during validation so it can be accessible in constraints:
 
 ```go
 ok, err := kensho.ValidateWithContext(myCtx, myStruct)

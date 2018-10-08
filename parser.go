@@ -5,20 +5,17 @@ import (
 )
 
 type (
-	Parser func(config string) ([]*StructMetadata, error)
-)
-
-var parsers = map[string]Parser{
-	".json": jsonParse,
-}
-
-func AddParser(parser Parser, extension string) {
-	parsers[extension] = parser
-}
-
-type (
+	Parser  func(config string) ([]*StructMetadata, error)
 	mapping map[string]map[string][]interface{}
 )
+
+func AddParser(extension string, parser Parser) {
+	defaultValidator.AddParser(extension, parser)
+}
+
+func (validator *Validator) AddParser(extension string, parser Parser) {
+	validator.parsers[extension] = parser
+}
 
 func jsonParse(config string) ([]*StructMetadata, error) {
 	m := mapping{}
@@ -42,21 +39,21 @@ func jsonParse(config string) ([]*StructMetadata, error) {
 
 		for field, validatorList := range fields {
 			fm := &FieldMetadata{
-				FieldName:  field,
-				Validators: make([]*ValidatorMetadata, len(validatorList)),
+				FieldName:   field,
+				Constraints: make([]*ConstraintMetadata, len(validatorList)),
 			}
 			metadata.Fields[field] = fm
 
 			for i, validator := range validatorList {
 				switch validator.(type) {
 				case string:
-					fm.Validators[i] = &ValidatorMetadata{
+					fm.Constraints[i] = &ConstraintMetadata{
 						Tag: validator.(string),
 					}
 				case map[string]interface{}:
 					config := validator.(map[string]interface{})
 					for key, value := range config {
-						fm.Validators[i] = &ValidatorMetadata{
+						fm.Constraints[i] = &ConstraintMetadata{
 							Tag: key,
 							Arg: value,
 						}

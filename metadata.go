@@ -2,18 +2,12 @@ package kensho
 
 import (
 	"fmt"
-	"reflect"
-	"sync"
-
-	"strings"
-
-	"strconv"
-
-	"path/filepath"
-
-	"os"
-
 	"io/ioutil"
+	"os"
+	"path/filepath"
+	"reflect"
+	"strconv"
+	"strings"
 )
 
 type (
@@ -23,23 +17,24 @@ type (
 	}
 
 	FieldMetadata struct {
-		FieldName  string
-		Validators []*ValidatorMetadata
+		FieldName   string
+		Constraints []*ConstraintMetadata
 	}
 
-	ValidatorMetadata struct {
-		Tag       string
-		Validator Validator
-		Arg       interface{}
+	ConstraintMetadata struct {
+		Tag        string
+		Constraint Constraint
+		Arg        interface{}
 	}
 )
 
 const tagName = "valid"
 
-var metadataList = map[string]*StructMetadata{}
-var metadataMutex = &sync.Mutex{}
-
 func LoadFiles(patterns ...string) error {
+	return defaultValidator.LoadFiles(patterns...)
+}
+
+func (validator *Validator) LoadFiles(patterns ...string) error {
 	for _, pattern := range patterns {
 		matches, err := filepath.Glob(pattern)
 		if err != nil {
@@ -47,7 +42,12 @@ func LoadFiles(patterns ...string) error {
 		}
 
 		for _, match := range matches {
-			parser, ok := parsers[filepath.Ext(match)]
+			ext := filepath.Ext(match)
+			if ext == "" {
+				continue
+			}
+
+			parser, ok := validator.parsers[ext[1:]]
 			if !ok {
 				continue
 			}
@@ -73,17 +73,17 @@ func LoadFiles(patterns ...string) error {
 
 			for _, metadata := range result {
 				for _, field := range metadata.Fields {
-					for _, val := range field.Validators {
-						validator, ok := validators[val.Tag]
+					for _, val := range field.Constraints {
+						constraint, ok := validator.constraints[val.Tag]
 						if !ok {
-							return fmt.Errorf("validator %s doesn't exists", val.Tag)
+							return fmt.Errorf("constraint %s doesn't exists", val.Tag)
 						}
 
-						val.Validator = validator
+						val.Constraint = constraint
 					}
 				}
 
-				metadataList[metadata.StructName] = metadata
+				validator.metadata[metadata.StructName] = metadata
 			}
 		}
 	}
@@ -91,13 +91,13 @@ func LoadFiles(patterns ...string) error {
 	return nil
 }
 
-func getStructMetadata(s interface{}) (*StructMetadata, error) {
+func (validator *Validator) getStructMetadata(s interface{}) (*StructMetadata, error) {
 	structType := reflect.TypeOf(s)
 	structName := structType.String()
 
-	metadataMutex.Lock()
-	metadata, err := findOrLoadMetadata(structName, structType)
-	metadataMutex.Unlock()
+	validator.metadataMtx.Lock()
+	metadata, err := validator.findOrLoadMetadata(structName, structType)
+	validator.metadataMtx.Unlock()
 
 	if err != nil {
 		return nil, err
@@ -106,20 +106,20 @@ func getStructMetadata(s interface{}) (*StructMetadata, error) {
 	return metadata, nil
 }
 
-func findOrLoadMetadata(structName string, structType reflect.Type) (*StructMetadata, error) {
-	if _, ok := metadataList[structName]; !ok {
-		metadata, err := loadMetadataFromType(structName, structType)
+func (validator *Validator) findOrLoadMetadata(structName string, structType reflect.Type) (*StructMetadata, error) {
+	if _, ok := validator.metadata[structName]; !ok {
+		metadata, err := validator.loadMetadataFromType(structName, structType)
 		if err != nil {
 			return nil, err
 		}
 
-		metadataList[structName] = metadata
+		validator.metadata[structName] = metadata
 	}
 
-	return metadataList[structName], nil
+	return validator.metadata[structName], nil
 }
 
-func loadMetadataFromType(structName string, structType reflect.Type) (*StructMetadata, error) {
+func (validator *Validator) loadMetadataFromType(structName string, structType reflect.Type) (*StructMetadata, error) {
 	metadata := &StructMetadata{
 		StructName: structName,
 		Fields:     make(map[string]*FieldMetadata),
@@ -138,26 +138,26 @@ func loadMetadataFromType(structName string, structType reflect.Type) (*StructMe
 		}
 
 		fm := &FieldMetadata{
-			FieldName:  fieldType.Name,
-			Validators: []*ValidatorMetadata{},
+			FieldName:   fieldType.Name,
+			Constraints: []*ConstraintMetadata{},
 		}
 		metadata.Fields[fieldType.Name] = fm
 
-		for _, validatorTag := range tags {
-			c := strings.Split(strings.TrimSpace(validatorTag), "=")
+		for _, constraintTag := range tags {
+			c := strings.Split(strings.TrimSpace(constraintTag), "=")
 			t := strings.TrimSpace(c[0])
 			if t == "" {
 				continue
 			}
 
-			validator, ok := validators[t]
+			constraint, ok := validator.constraints[t]
 			if !ok {
-				return nil, fmt.Errorf("validator %s doesn't exists", t)
+				return nil, fmt.Errorf("constraint %s doesn't exists", t)
 			}
 
-			vm := &ValidatorMetadata{
-				Tag:       t,
-				Validator: validator,
+			cm := &ConstraintMetadata{
+				Tag:        t,
+				Constraint: constraint,
 			}
 
 			if len(c) == 2 {
@@ -167,15 +167,15 @@ func loadMetadataFromType(structName string, structType reflect.Type) (*StructMe
 				}
 
 				if arg, err := strconv.Atoi(rawArg); err == nil {
-					vm.Arg = arg
+					cm.Arg = arg
 				} else if arg, err := strconv.ParseFloat(rawArg, 64); err == nil {
-					vm.Arg = arg
+					cm.Arg = arg
 				} else {
-					vm.Arg = strings.Trim(rawArg, `"'`)
+					cm.Arg = strings.Trim(rawArg, `"'`)
 				}
 			}
 
-			fm.Validators = append(fm.Validators, vm)
+			fm.Constraints = append(fm.Constraints, cm)
 		}
 	}
 

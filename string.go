@@ -16,7 +16,7 @@ func validWithRegex(ctx context.Context, subject interface{}, value interface{},
 		return nil
 	}
 
-	err := stringValidator(ctx, subject, value, arg)
+	err := StringConstraint(ctx, subject, value, arg)
 	if err != nil {
 		return err
 	}
@@ -37,28 +37,28 @@ func validWithRegex(ctx context.Context, subject interface{}, value interface{},
 	return error
 }
 
-func regexValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
+func RegexConstraint(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
 	return validWithRegex(ctx, subject, value, arg, &Error{
 		Message: TranslateError("not_match_regex", nil),
 		Error:   "not_match_regex",
 	})
 }
 
-func emailValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
+func EmailConstraint(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
 	return validWithRegex(ctx, subject, value, email, &Error{
 		Message: TranslateError("invalid_email", nil),
 		Error:   "invalid_email",
 	})
 }
 
-func uuidValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
+func UUIDConstraint(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
 	return validWithRegex(ctx, subject, value, uuid, &Error{
 		Message: TranslateError("invalid_uuid", nil),
 		Error:   "invalid_uuid",
 	})
 }
 
-func colorHexValidator(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
+func ColorHexConstraint(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
 	return validWithRegex(ctx, subject, value, colorHex, &Error{
 		Message: TranslateError("invalid_color", nil),
 		Error:   "invalid_color",
