@@ -21,7 +21,9 @@ func Test_emailConstraint(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		err := EmailConstraint(context.TODO(), nil, test.subject, nil)
+		err := EmailConstraint(context.TODO(), ConstraintArgs{
+			Value: test.subject,
+		})
 		if ok := err == nil; ok != test.expected {
 			t.Errorf("Expected from email constraint: %t with %T(%v)", test.expected, test.subject, test.subject)
 		}
@@ -45,7 +47,9 @@ func Test_uuidConstraint(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		err := UUIDConstraint(context.TODO(), nil, test.subject, nil)
+		err := UUIDConstraint(context.TODO(), ConstraintArgs{
+			Value: test.subject,
+		})
 		if ok := err == nil; ok != test.expected {
 			t.Errorf("Expected from email constraint: %t with %T(%v)", test.expected, test.subject, test.subject)
 		}

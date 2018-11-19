@@ -3,7 +3,14 @@ package kensho
 import "context"
 
 type (
-	Constraint func(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error
+	ConstraintArgs struct {
+		Root    interface{}
+		Subject interface{}
+		Value   interface{}
+		Arg     interface{}
+	}
+
+	Constraint func(ctx context.Context, args ConstraintArgs) *Error
 )
 
 var defaultConstraints = map[string]Constraint{

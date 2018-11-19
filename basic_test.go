@@ -30,7 +30,9 @@ func Test_requiredConstraint(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		err := RequiredConstraint(context.Background(), nil, test.subject, nil)
+		err := RequiredConstraint(context.Background(), ConstraintArgs{
+			Value: test.subject,
+		})
 		if ok := err == nil; ok != test.expected {
 			t.Errorf("Expected from required constraint: %t with %T(%v)", test.expected, test.subject, test.subject)
 		}
@@ -53,7 +55,9 @@ func Test_stringConstraint(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		err := StringConstraint(context.Background(), nil, test.subject, nil)
+		err := StringConstraint(context.Background(), ConstraintArgs{
+			Value: test.subject,
+		})
 		if ok := err == nil; ok != test.expected {
 			t.Errorf("Expected from string constraint: %t with %T(%v)", test.expected, test.subject, test.subject)
 		}
@@ -75,7 +79,9 @@ func Test_structConstraint(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		err := StructConstraint(context.Background(), nil, test.subject, nil)
+		err := StructConstraint(context.Background(), ConstraintArgs{
+			Value: test.subject,
+		})
 		if ok := err == nil; ok != test.expected {
 			t.Errorf("Expected from struct constraint: %t with %T(%v)", test.expected, test.subject, test.subject)
 		}

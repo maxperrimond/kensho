@@ -11,55 +11,70 @@ const (
 	colorHex = "^#(?:[0-9a-fA-F]{3}){1,2}$"
 )
 
-func validWithRegex(ctx context.Context, subject interface{}, value interface{}, arg interface{}, error *Error) *Error {
-	if value == nil {
+func validWithRegex(ctx context.Context, args ConstraintArgs, error *Error) *Error {
+	if args.Value == nil {
 		return nil
 	}
 
-	err := StringConstraint(ctx, subject, value, arg)
+	err := StringConstraint(ctx, args)
 	if err != nil {
 		return err
 	}
 
-	if value == "" {
+	if args.Value == "" {
 		return nil
 	}
 
-	pattern, ok := arg.(string)
+	pattern, ok := args.Arg.(string)
 	if !ok {
 		panic("the pattern is missing to validate with a regex")
 	}
 
-	if regexp.MustCompile(pattern).MatchString(value.(string)) {
+	if regexp.MustCompile(pattern).MatchString(args.Value.(string)) {
 		return nil
 	}
 
 	return error
 }
 
-func RegexConstraint(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
-	return validWithRegex(ctx, subject, value, arg, &Error{
+func RegexConstraint(ctx context.Context, args ConstraintArgs) *Error {
+	return validWithRegex(ctx, args, &Error{
 		Message: TranslateError("not_match_regex", nil),
 		Error:   "not_match_regex",
 	})
 }
 
-func EmailConstraint(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
-	return validWithRegex(ctx, subject, value, email, &Error{
+func EmailConstraint(ctx context.Context, args ConstraintArgs) *Error {
+	return validWithRegex(ctx, ConstraintArgs{
+		Root:    args.Root,
+		Subject: args.Subject,
+		Value:   args.Value,
+		Arg:     email,
+	}, &Error{
 		Message: TranslateError("invalid_email", nil),
 		Error:   "invalid_email",
 	})
 }
 
-func UUIDConstraint(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
-	return validWithRegex(ctx, subject, value, uuid, &Error{
+func UUIDConstraint(ctx context.Context, args ConstraintArgs) *Error {
+	return validWithRegex(ctx, ConstraintArgs{
+		Root:    args.Root,
+		Subject: args.Subject,
+		Value:   args.Value,
+		Arg:     uuid,
+	}, &Error{
 		Message: TranslateError("invalid_uuid", nil),
 		Error:   "invalid_uuid",
 	})
 }
 
-func ColorHexConstraint(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
-	return validWithRegex(ctx, subject, value, colorHex, &Error{
+func ColorHexConstraint(ctx context.Context, args ConstraintArgs) *Error {
+	return validWithRegex(ctx, ConstraintArgs{
+		Root:    args.Root,
+		Subject: args.Subject,
+		Value:   args.Value,
+		Arg:     colorHex,
+	}, &Error{
 		Message: TranslateError("invalid_color", nil),
 		Error:   "invalid_color",
 	})

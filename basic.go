@@ -6,16 +6,16 @@ import (
 	"reflect"
 )
 
-func validConstraint(_ context.Context, _ interface{}, _ interface{}, _ interface{}) *Error {
+func validConstraint(_ context.Context, _ ConstraintArgs) *Error {
 	return nil
 }
 
-func StructConstraint(_ context.Context, _ interface{}, value interface{}, _ interface{}) *Error {
-	if value == nil {
+func StructConstraint(_ context.Context, args ConstraintArgs) *Error {
+	if args.Value == nil {
 		return nil
 	}
 
-	t := reflect.TypeOf(value)
+	t := reflect.TypeOf(args.Value)
 	if t.Kind() == reflect.Ptr || t.Kind() == reflect.Interface {
 		t = t.Elem()
 	}
@@ -30,12 +30,12 @@ func StructConstraint(_ context.Context, _ interface{}, value interface{}, _ int
 	return nil
 }
 
-func StringConstraint(_ context.Context, _ interface{}, value interface{}, arg interface{}) *Error {
-	if value == nil {
+func StringConstraint(_ context.Context, args ConstraintArgs) *Error {
+	if args.Value == nil {
 		return nil
 	}
 
-	t := reflect.TypeOf(value)
+	t := reflect.TypeOf(args.Value)
 	if t.Kind() == reflect.Ptr || t.Kind() == reflect.Interface {
 		t = t.Elem()
 	}
@@ -50,15 +50,15 @@ func StringConstraint(_ context.Context, _ interface{}, value interface{}, arg i
 	return nil
 }
 
-func RequiredConstraint(_ context.Context, _ interface{}, value interface{}, arg interface{}) *Error {
-	if value != nil {
-		switch reflect.TypeOf(value).Kind() {
+func RequiredConstraint(_ context.Context, args ConstraintArgs) *Error {
+	if args.Value != nil {
+		switch reflect.TypeOf(args.Value).Kind() {
 		case reflect.String:
-			if len(value.(string)) > 0 {
+			if len(args.Value.(string)) > 0 {
 				return nil
 			}
 		case reflect.Array, reflect.Slice, reflect.Map, reflect.Ptr, reflect.Interface:
-			if !reflect.ValueOf(value).IsNil() {
+			if !reflect.ValueOf(args.Value).IsNil() {
 				return nil
 			}
 		default:
@@ -72,19 +72,19 @@ func RequiredConstraint(_ context.Context, _ interface{}, value interface{}, arg
 	}
 }
 
-func LengthConstraint(_ context.Context, _ interface{}, value interface{}, arg interface{}) *Error {
-	if value == nil {
+func LengthConstraint(_ context.Context, args ConstraintArgs) *Error {
+	if args.Value == nil {
 		return nil
 	}
 
-	length, ok := arg.(int)
+	length, ok := args.Arg.(int)
 	if !ok {
-		panic(fmt.Sprintf("invalid argument to length: %v", arg))
+		panic(fmt.Sprintf("invalid argument to length: %v", args.Arg))
 	}
 
-	switch reflect.TypeOf(value).Kind() {
+	switch reflect.TypeOf(args.Value).Kind() {
 	case reflect.String, reflect.Array, reflect.Slice, reflect.Map:
-		if reflect.ValueOf(value).Len() != length {
+		if reflect.ValueOf(args.Value).Len() != length {
 			return &Error{
 				Message: TranslateError("invalid_length", map[string]interface{}{
 					"length": length,
@@ -99,23 +99,23 @@ func LengthConstraint(_ context.Context, _ interface{}, value interface{}, arg i
 	}
 }
 
-func MinConstraint(_ context.Context, _ interface{}, value interface{}, arg interface{}) *Error {
-	if value == nil {
+func MinConstraint(_ context.Context, args ConstraintArgs) *Error {
+	if args.Value == nil {
 		return nil
 	}
 
-	min, ok := arg.(int)
+	min, ok := args.Arg.(int)
 	if !ok {
-		panic(fmt.Sprintf("invalid argument to min: %v", arg))
+		panic(fmt.Sprintf("invalid argument to min: %v", args.Arg))
 	}
 
-	switch reflect.TypeOf(value).Kind() {
+	switch reflect.TypeOf(args.Value).Kind() {
 	case reflect.String, reflect.Array, reflect.Slice, reflect.Map:
-		if reflect.ValueOf(value).Len() < min {
+		if reflect.ValueOf(args.Value).Len() < min {
 			return &Error{
 				Message: TranslateError("too_short", map[string]interface{}{
 					"min":    min,
-					"length": reflect.ValueOf(value).Len(),
+					"length": reflect.ValueOf(args.Value).Len(),
 				}),
 				Error: "too_short",
 			}
@@ -127,23 +127,23 @@ func MinConstraint(_ context.Context, _ interface{}, value interface{}, arg inte
 	}
 }
 
-func MaxConstraint(_ context.Context, _ interface{}, value interface{}, arg interface{}) *Error {
-	if value == nil {
+func MaxConstraint(_ context.Context, args ConstraintArgs) *Error {
+	if args.Value == nil {
 		return nil
 	}
 
-	max, ok := arg.(int)
+	max, ok := args.Arg.(int)
 	if !ok {
-		panic(fmt.Sprintf("invalid argument to max: %v", arg))
+		panic(fmt.Sprintf("invalid argument to max: %v", args.Arg))
 	}
 
-	switch reflect.TypeOf(value).Kind() {
+	switch reflect.TypeOf(args.Value).Kind() {
 	case reflect.String, reflect.Array, reflect.Slice, reflect.Map:
-		if reflect.ValueOf(value).Len() > max {
+		if reflect.ValueOf(args.Value).Len() > max {
 			return &Error{
 				Message: TranslateError("too_long", map[string]interface{}{
 					"max":    max,
-					"length": reflect.ValueOf(value).Len(),
+					"length": reflect.ValueOf(args.Value).Len(),
 				}),
 				Error: "too_long",
 			}

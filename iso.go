@@ -267,34 +267,34 @@ var iso3166List = []iso3166{
 	{"Zambia", "ZM", "ZMB", "894"},
 }
 
-func ISO3166Constraint(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
-	if value == nil {
+func ISO3166Constraint(ctx context.Context, args ConstraintArgs) *Error {
+	if args.Value == nil {
 		return nil
 	}
 
-	err := StringConstraint(ctx, subject, value, arg)
+	err := StringConstraint(ctx, args)
 	if err != nil {
 		return err
 	}
 
-	str := value.(string)
+	str := args.Value.(string)
 	if str == "" {
 		return nil
 	}
 
-	compare, _ := arg.(string)
+	compare, _ := args.Arg.(string)
 	for _, country := range iso3166List {
 		switch compare {
 		case "alpha3":
-			if country.Alpha3 == value {
+			if country.Alpha3 == args.Value {
 				return nil
 			}
 		case "num":
-			if country.Numeric == value {
+			if country.Numeric == args.Value {
 				return nil
 			}
 		default:
-			if country.Alpha2 == value {
+			if country.Alpha2 == args.Value {
 				return nil
 			}
 		}
@@ -305,31 +305,31 @@ func ISO3166Constraint(ctx context.Context, subject interface{}, value interface
 		Error:   "invalid_country",
 		Parameters: map[string]interface{}{
 			"kind":  compare,
-			"value": value,
+			"value": args.Value,
 		},
 	}
 }
 
-func ISO639Constraint(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *Error {
-	if value == nil {
+func ISO639Constraint(ctx context.Context, args ConstraintArgs) *Error {
+	if args.Value == nil {
 		return nil
 	}
 
-	if err := StringConstraint(ctx, subject, value, arg); err != nil {
+	if err := StringConstraint(ctx, args); err != nil {
 		return err
 	}
 
-	str := value.(string)
+	str := args.Value.(string)
 	if str == "" {
 		return nil
 	}
 
-	if _, err := language.Parse(value.(string)); err != nil {
+	if _, err := language.Parse(args.Value.(string)); err != nil {
 		return &Error{
 			Message: TranslateError("invalid_language", nil),
 			Error:   "invalid_language",
 			Parameters: map[string]interface{}{
-				"value": value,
+				"value": args.Value,
 			},
 		}
 	}
