@@ -30,9 +30,9 @@ func (validator *Validator) ValidateWithContext(ctx context.Context, subject int
 
 	switch val.Type().Kind() {
 	case reflect.Array, reflect.Slice:
-		violations = validator.validateList(ctx, val, "", val)
+		violations = validator.validateList(ctx, subject, "", val)
 	case reflect.Struct:
-		violations = validator.validateStruct(ctx, val, "", val)
+		violations = validator.validateStruct(ctx, subject, "", val)
 	default:
 		panic(fmt.Sprintf("Cannot validate a %T, it must a struct or a list of struct", subject))
 	}
@@ -40,7 +40,7 @@ func (validator *Validator) ValidateWithContext(ctx context.Context, subject int
 	return violations == nil, violations
 }
 
-func (validator *Validator) validateStruct(ctx context.Context, root reflect.Value, path string, val reflect.Value) ViolationList {
+func (validator *Validator) validateStruct(ctx context.Context, root interface{}, path string, val reflect.Value) ViolationList {
 	var wg sync.WaitGroup
 
 	sm, err := validator.getStructMetadata(val.Interface())
@@ -75,7 +75,7 @@ func (validator *Validator) validateStruct(ctx context.Context, root reflect.Val
 	return violations
 }
 
-func (validator *Validator) validateList(ctx context.Context, root reflect.Value, path string, val reflect.Value) ViolationList {
+func (validator *Validator) validateList(ctx context.Context, root interface{}, path string, val reflect.Value) ViolationList {
 	var wg sync.WaitGroup
 
 	var violations ViolationList = nil
@@ -115,7 +115,7 @@ func (validator *Validator) validateList(ctx context.Context, root reflect.Value
 	return violations
 }
 
-func (validator *Validator) validateValue(ctx context.Context, root reflect.Value, path string, val reflect.Value, fieldVal reflect.Value, metadata *FieldMetadata) ViolationList {
+func (validator *Validator) validateValue(ctx context.Context, root interface{}, path string, val reflect.Value, fieldVal reflect.Value, metadata *FieldMetadata) ViolationList {
 	switch fieldVal.Type().Kind() {
 	case reflect.Array, reflect.Slice:
 		return validator.validateArrayValue(ctx, root, path, val, fieldVal, metadata)
@@ -130,7 +130,7 @@ func (validator *Validator) validateValue(ctx context.Context, root reflect.Valu
 		}
 
 		err := constraintMetadata.Constraint(ctx, ConstraintArgs{
-			Root:    root.Interface(),
+			Root:    root,
 			Subject: val.Interface(),
 			Value:   fieldVal.Interface(),
 			Arg:     constraintMetadata.Arg,
@@ -154,7 +154,7 @@ func (validator *Validator) validateValue(ctx context.Context, root reflect.Valu
 	return violations
 }
 
-func (validator *Validator) validateArrayValue(ctx context.Context, root reflect.Value, path string, val reflect.Value, fieldVal reflect.Value, metadata *FieldMetadata) ViolationList {
+func (validator *Validator) validateArrayValue(ctx context.Context, root interface{}, path string, val reflect.Value, fieldVal reflect.Value, metadata *FieldMetadata) ViolationList {
 	var violations ViolationList = nil
 	violationsMtx := sync.Mutex{}
 
@@ -165,7 +165,7 @@ func (validator *Validator) validateArrayValue(ctx context.Context, root reflect
 		switch constraintMetadata.Tag {
 		case "required", "min", "max", "length":
 			err := constraintMetadata.Constraint(ctx, ConstraintArgs{
-				Root:    root.Interface(),
+				Root:    root,
 				Subject: val.Interface(),
 				Value:   fieldVal.Interface(),
 				Arg:     constraintMetadata.Arg,
