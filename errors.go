@@ -1,6 +1,7 @@
 package kensho
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -26,7 +27,17 @@ type (
 )
 
 func (violations ViolationList) Error() string {
-	return "" // TODO: formatted errors
+	if len(violations) > 0 {
+		err := fmt.Sprintf("Validation returned following error \"%s\"", violations[0].Message)
+
+		if len(violations) > 1 {
+			err += fmt.Sprintf(" with %d other errors", len(violations)-1)
+		}
+
+		return err
+	}
+
+	return ""
 }
 
 func (violations *ViolationList) ToFormErrors() *FormError {

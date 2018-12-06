@@ -77,8 +77,15 @@ func LengthConstraint(_ context.Context, args ConstraintArgs) *Error {
 		return nil
 	}
 
-	length, ok := args.Arg.(int)
-	if !ok {
+	var length int
+	switch args.Arg.(type) {
+	case int:
+		length = args.Arg.(int)
+	case int64:
+		length = int(args.Arg.(int64))
+	case float64:
+		length = int(args.Arg.(float64))
+	default:
 		panic(fmt.Sprintf("invalid argument to length: %v", args.Arg))
 	}
 
@@ -104,8 +111,15 @@ func MinConstraint(_ context.Context, args ConstraintArgs) *Error {
 		return nil
 	}
 
-	min, ok := args.Arg.(int)
-	if !ok {
+	var min int
+	switch args.Arg.(type) {
+	case int:
+		min = args.Arg.(int)
+	case int64:
+		min = int(args.Arg.(int64))
+	case float64:
+		min = int(args.Arg.(float64))
+	default:
 		panic(fmt.Sprintf("invalid argument to min: %v", args.Arg))
 	}
 
@@ -132,8 +146,15 @@ func MaxConstraint(_ context.Context, args ConstraintArgs) *Error {
 		return nil
 	}
 
-	max, ok := args.Arg.(int)
-	if !ok {
+	var max int
+	switch args.Arg.(type) {
+	case int:
+		max = args.Arg.(int)
+	case int64:
+		max = int(args.Arg.(int64))
+	case float64:
+		max = int(args.Arg.(float64))
+	default:
 		panic(fmt.Sprintf("invalid argument to max: %v", args.Arg))
 	}
 
