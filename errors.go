@@ -2,6 +2,7 @@ package kensho
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -51,7 +52,7 @@ func (violations *ViolationList) ToFormErrors() *FormError {
 		cursor := formError
 
 		if violation.Path != "" {
-			fullPath := strings.Split(violation.Path, ".")
+			fullPath := violation.splitPath()
 			for _, path := range fullPath {
 				if cursor.Fields == nil {
 					cursor.Fields = map[string]*FormError{}
@@ -69,4 +70,29 @@ func (violations *ViolationList) ToFormErrors() *FormError {
 	}
 
 	return formError
+}
+
+func (violation *Violation) splitPath() []string {
+	r := regexp.MustCompile(`\[([0-9]*)]`)
+	fields := strings.Split(violation.Path, ".")
+
+	for i := 0; ; i++ {
+		if len(fields) <= i {
+			break
+		}
+
+		field := fields[i]
+
+		loc := r.FindStringIndex(field)
+		if loc == nil {
+			continue
+		}
+
+		slicePath := field[(loc[0] + 1):(loc[1] - 1)]
+
+		fields[i] = string(append([]byte(field)[:loc[0]], []byte(field)[loc[1]:]...))
+		fields = append(fields[:i+1], append([]string{slicePath}, fields[i+1:]...)...)
+	}
+
+	return fields
 }
