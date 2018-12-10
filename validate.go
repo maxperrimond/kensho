@@ -95,9 +95,9 @@ func (validator *Validator) validateList(ctx context.Context, root interface{}, 
 
 			switch itemVal.Type().Kind() {
 			case reflect.Array, reflect.Slice:
-				itemViolations = validator.validateList(ctx, root, appendPath(path, fieldName), itemVal)
+				itemViolations = validator.validateList(ctx, root, appendIndex(path, fieldName), itemVal)
 			case reflect.Struct:
-				itemViolations = validator.validateStruct(ctx, root, appendPath(path, fieldName), itemVal)
+				itemViolations = validator.validateStruct(ctx, root, appendIndex(path, fieldName), itemVal)
 			default:
 				panic(fmt.Sprintf("Cannot validate a %T, it must received a struct or a list of structs", itemVal.Interface()))
 			}
@@ -185,7 +185,7 @@ func (validator *Validator) validateArrayValue(ctx context.Context, root interfa
 		go func(fieldName string, itemVal reflect.Value) {
 			defer wg.Done()
 
-			if valueViolations := validator.validateValue(ctx, root, appendPath(path, fieldName), val, itemVal, itemMetadata); valueViolations != nil {
+			if valueViolations := validator.validateValue(ctx, root, appendIndex(path, fieldName), val, itemVal, itemMetadata); valueViolations != nil {
 				violationsMtx.Lock()
 				violations = append(violations, valueViolations...)
 				violationsMtx.Unlock()
@@ -204,4 +204,8 @@ func appendPath(path string, field string) string {
 	}
 
 	return path + "." + field
+}
+
+func appendIndex(path string, index string) string {
+	return path + fmt.Sprintf("[%s]", index)
 }
