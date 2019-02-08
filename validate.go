@@ -24,7 +24,11 @@ func (validator *Validator) ValidateWithContext(ctx context.Context, subject int
 	var violations ViolationList = nil
 
 	val := reflect.ValueOf(subject)
-	if val.Kind() == reflect.Interface || val.Kind() == reflect.Ptr {
+	if val.Kind() == reflect.Interface {
+		val = val.Elem()
+	}
+
+	if val.Kind() == reflect.Ptr {
 		val = val.Elem()
 	}
 
@@ -89,7 +93,11 @@ func (validator *Validator) validateList(ctx context.Context, root interface{}, 
 
 			var itemViolations ViolationList = nil
 
-			if itemVal.Kind() == reflect.Interface || itemVal.Kind() == reflect.Ptr {
+			if itemVal.Kind() == reflect.Interface {
+				itemVal = itemVal.Elem()
+			}
+
+			if itemVal.Kind() == reflect.Ptr {
 				itemVal = itemVal.Elem()
 			}
 
@@ -140,7 +148,11 @@ func (validator *Validator) validateValue(ctx context.Context, root interface{},
 		}
 	}
 
-	if fieldVal.Kind() == reflect.Interface || fieldVal.Kind() == reflect.Ptr {
+	if fieldVal.Kind() == reflect.Interface {
+		fieldVal = fieldVal.Elem()
+	}
+
+	if fieldVal.Kind() == reflect.Ptr {
 		fieldVal = fieldVal.Elem()
 	}
 
