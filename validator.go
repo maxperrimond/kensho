@@ -11,11 +11,6 @@ type (
 		metadataMtx *sync.Mutex
 		parsers     map[string]Parser
 	}
-
-	CustomConstraint struct {
-		Name       string
-		Constraint Constraint
-	}
 )
 
 var defaultValidator = &Validator{
@@ -23,7 +18,7 @@ var defaultValidator = &Validator{
 	metadata:    map[string]*StructMetadata{},
 	metadataMtx: &sync.Mutex{},
 	parsers: map[string]Parser{
-		"json": jsonParse,
+		"json": parseJSON,
 	},
 }
 
@@ -42,7 +37,7 @@ func NewValidator(customConstraints ...CustomConstraint) *Validator {
 		metadata:    map[string]*StructMetadata{},
 		metadataMtx: &sync.Mutex{},
 		parsers: map[string]Parser{
-			"json": jsonParse,
+			"json": parseJSON,
 		},
 	}
 }

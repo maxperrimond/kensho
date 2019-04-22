@@ -17,7 +17,7 @@ func (validator *Validator) AddParser(extension string, parser Parser) {
 	validator.parsers[extension] = parser
 }
 
-func jsonParse(config string) ([]*StructMetadata, error) {
+func parseJSON(config string) ([]*StructMetadata, error) {
 	m := mapping{}
 
 	err := json.Unmarshal([]byte(config), &m)

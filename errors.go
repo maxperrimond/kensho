@@ -27,6 +27,19 @@ type (
 	}
 )
 
+func NewError(error string, parameters map[string]interface{}) *Error {
+	return NewErrorWithError(error, parameters, "")
+}
+
+func NewErrorWithError(error string, parameters map[string]interface{}, code string) *Error {
+	return &Error{
+		Message:    TranslateError(error, parameters),
+		Error:      error,
+		Parameters: parameters,
+		Code:       code,
+	}
+}
+
 func (violations ViolationList) Error() string {
 	if len(violations) > 0 {
 		err := fmt.Sprintf("Validation returned following error \"%s\"", violations[0].Message)

@@ -11,6 +11,11 @@ type (
 	}
 
 	Constraint func(ctx context.Context, args ConstraintArgs) *Error
+
+	CustomConstraint struct {
+		Name       string
+		Constraint Constraint
+	}
 )
 
 var defaultConstraints = map[string]Constraint{
@@ -29,6 +34,13 @@ var defaultConstraints = map[string]Constraint{
 	"country":  ISO3166Constraint,
 	"iso639":   ISO639Constraint,
 	"language": ISO639Constraint,
+}
+
+func NewCustomConstraint(name string, constraint Constraint) CustomConstraint {
+	return CustomConstraint{
+		Name:       name,
+		Constraint: constraint,
+	}
 }
 
 func AddConstraint(name string, constraint Constraint) {

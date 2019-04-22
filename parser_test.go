@@ -17,7 +17,7 @@ func TestJsonParser_Parse(t *testing.T) {
 		panic(err)
 	}
 
-	result, err := jsonParse(string(config))
+	result, err := parseJSON(string(config))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +38,7 @@ func TestJsonParser_Parse(t *testing.T) {
 }
 
 func TestJsonParser_Parse_EmptyJson(t *testing.T) {
-	result, err := jsonParse(`{}`)
+	result, err := parseJSON(`{}`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +49,7 @@ func TestJsonParser_Parse_EmptyJson(t *testing.T) {
 }
 
 func TestJsonParser_Parse_OtherFormat(t *testing.T) {
-	_, err := jsonParse(`[{"foo": "foo"}]`)
+	_, err := parseJSON(`[{"foo": "foo"}]`)
 	if err == nil {
 		t.Error("Should get an error")
 	}
