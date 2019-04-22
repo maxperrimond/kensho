@@ -300,14 +300,10 @@ func ISO3166Constraint(ctx context.Context, args ConstraintArgs) *Error {
 		}
 	}
 
-	return &Error{
-		Message: TranslateError("invalid_country", nil),
-		Error:   "invalid_country",
-		Parameters: map[string]interface{}{
-			"kind":  compare,
-			"value": args.Value,
-		},
-	}
+	return NewError("invalid_country", map[string]interface{}{
+		"kind":  compare,
+		"value": args.Value,
+	})
 }
 
 func ISO639Constraint(ctx context.Context, args ConstraintArgs) *Error {
@@ -325,13 +321,9 @@ func ISO639Constraint(ctx context.Context, args ConstraintArgs) *Error {
 	}
 
 	if _, err := language.Parse(args.Value.(string)); err != nil {
-		return &Error{
-			Message: TranslateError("invalid_language", nil),
-			Error:   "invalid_language",
-			Parameters: map[string]interface{}{
-				"value": args.Value,
-			},
-		}
+		return NewError("invalid_language", map[string]interface{}{
+			"value": args.Value,
+		})
 	}
 
 	return nil

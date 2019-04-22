@@ -11,7 +11,7 @@ const (
 	colorHex = "^#(?:[0-9a-fA-F]{3}){1,2}$"
 )
 
-func validWithRegex(ctx context.Context, args ConstraintArgs, error *Error) *Error {
+func validWithRegex(ctx context.Context, args ConstraintArgs, onError func() *Error) *Error {
 	if args.Value == nil {
 		return nil
 	}
@@ -34,13 +34,14 @@ func validWithRegex(ctx context.Context, args ConstraintArgs, error *Error) *Err
 		return nil
 	}
 
-	return error
+	return onError()
 }
 
 func RegexConstraint(ctx context.Context, args ConstraintArgs) *Error {
-	return validWithRegex(ctx, args, &Error{
-		Message: TranslateError("not_match_regex", nil),
-		Error:   "not_match_regex",
+	return validWithRegex(ctx, args, func() *Error {
+		return NewError("not_match_regex", map[string]interface{}{
+			"regex": args.Arg.(string),
+		})
 	})
 }
 
@@ -50,9 +51,8 @@ func EmailConstraint(ctx context.Context, args ConstraintArgs) *Error {
 		Subject: args.Subject,
 		Value:   args.Value,
 		Arg:     email,
-	}, &Error{
-		Message: TranslateError("invalid_email", nil),
-		Error:   "invalid_email",
+	}, func() *Error {
+		return NewError("invalid_email", nil)
 	})
 }
 
@@ -62,9 +62,8 @@ func UUIDConstraint(ctx context.Context, args ConstraintArgs) *Error {
 		Subject: args.Subject,
 		Value:   args.Value,
 		Arg:     uuid,
-	}, &Error{
-		Message: TranslateError("invalid_uuid", nil),
-		Error:   "invalid_uuid",
+	}, func() *Error {
+		return NewError("invalid_uuid", nil)
 	})
 }
 
@@ -74,8 +73,7 @@ func ColorHexConstraint(ctx context.Context, args ConstraintArgs) *Error {
 		Subject: args.Subject,
 		Value:   args.Value,
 		Arg:     colorHex,
-	}, &Error{
-		Message: TranslateError("invalid_color", nil),
-		Error:   "invalid_color",
+	}, func() *Error {
+		return NewError("invalid_color", nil)
 	})
 }

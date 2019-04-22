@@ -21,10 +21,7 @@ func StructConstraint(_ context.Context, args ConstraintArgs) *Error {
 	}
 
 	if t.Kind() != reflect.Struct {
-		return &Error{
-			Message: TranslateError("not_struct", nil),
-			Error:   "not_struct",
-		}
+		return NewError("not_struct", nil)
 	}
 
 	return nil
@@ -41,10 +38,7 @@ func StringConstraint(_ context.Context, args ConstraintArgs) *Error {
 	}
 
 	if t.Kind() != reflect.String {
-		return &Error{
-			Message: TranslateError("not_string", nil),
-			Error:   "not_string",
-		}
+		return NewError("not_string", nil)
 	}
 
 	return nil
@@ -66,10 +60,7 @@ func RequiredConstraint(_ context.Context, args ConstraintArgs) *Error {
 		}
 	}
 
-	return &Error{
-		Message: TranslateError("is_required", nil),
-		Error:   "is_required",
-	}
+	return NewError("is_required", nil)
 }
 
 func LengthConstraint(_ context.Context, args ConstraintArgs) *Error {
@@ -92,12 +83,9 @@ func LengthConstraint(_ context.Context, args ConstraintArgs) *Error {
 	switch reflect.TypeOf(args.Value).Kind() {
 	case reflect.String, reflect.Array, reflect.Slice, reflect.Map:
 		if reflect.ValueOf(args.Value).Len() != length {
-			return &Error{
-				Message: TranslateError("invalid_length", map[string]interface{}{
-					"length": length,
-				}),
-				Error: "invalid_length",
-			}
+			return NewError("invalid_length", map[string]interface{}{
+				"length": length,
+			})
 		}
 
 		return nil
@@ -125,14 +113,11 @@ func MinConstraint(_ context.Context, args ConstraintArgs) *Error {
 
 	switch reflect.TypeOf(args.Value).Kind() {
 	case reflect.String, reflect.Array, reflect.Slice, reflect.Map:
-		if reflect.ValueOf(args.Value).Len() < min {
-			return &Error{
-				Message: TranslateError("too_short", map[string]interface{}{
-					"min":    min,
-					"length": reflect.ValueOf(args.Value).Len(),
-				}),
-				Error: "too_short",
-			}
+		if length := reflect.ValueOf(args.Value).Len(); length < min {
+			return NewError("too_short", map[string]interface{}{
+				"min":    min,
+				"length": length,
+			})
 		}
 
 		return nil
@@ -160,14 +145,11 @@ func MaxConstraint(_ context.Context, args ConstraintArgs) *Error {
 
 	switch reflect.TypeOf(args.Value).Kind() {
 	case reflect.String, reflect.Array, reflect.Slice, reflect.Map:
-		if reflect.ValueOf(args.Value).Len() > max {
-			return &Error{
-				Message: TranslateError("too_long", map[string]interface{}{
-					"max":    max,
-					"length": reflect.ValueOf(args.Value).Len(),
-				}),
-				Error: "too_long",
-			}
+		if length := reflect.ValueOf(args.Value).Len(); length > max {
+			return NewError("too_long", map[string]interface{}{
+				"max":    max,
+				"length": length,
+			})
 		}
 
 		return nil
