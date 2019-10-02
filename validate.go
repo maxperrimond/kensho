@@ -137,12 +137,13 @@ func (validator *Validator) validateValue(ctx context.Context, root interface{},
 		}
 
 		validationContext := &ValidationContext{
-			ctx:     ctx,
-			value:   fieldVal.Interface(),
-			path:    path,
-			subject: val.Interface(),
-			root:    root,
-			arg:     constraintMetadata.Arg,
+			ctx:           ctx,
+			value:         fieldVal.Interface(),
+			path:          path,
+			subject:       val.Interface(),
+			root:          root,
+			arg:           constraintMetadata.Arg,
+			violationList: &ViolationList{},
 		}
 
 		err := constraintMetadata.Constraint(validationContext)
@@ -150,7 +151,7 @@ func (validator *Validator) validateValue(ctx context.Context, root interface{},
 			return nil, err
 		}
 
-		violations = append(violations, validationContext.violationList...)
+		violations = append(violations, validationContext.ViolationList()...)
 	}
 
 	if fieldVal.Kind() == reflect.Interface {
@@ -181,12 +182,13 @@ func (validator *Validator) validateArrayValue(ctx context.Context, root interfa
 		switch constraintMetadata.Tag {
 		case "required", "min", "max", "length":
 			validationContext := &ValidationContext{
-				ctx:     ctx,
-				value:   fieldVal.Interface(),
-				path:    path,
-				subject: val.Interface(),
-				root:    root,
-				arg:     constraintMetadata.Arg,
+				ctx:           ctx,
+				value:         fieldVal.Interface(),
+				path:          path,
+				subject:       val.Interface(),
+				root:          root,
+				arg:           constraintMetadata.Arg,
+				violationList: &ViolationList{},
 			}
 
 			err := constraintMetadata.Constraint(validationContext)
@@ -194,7 +196,7 @@ func (validator *Validator) validateArrayValue(ctx context.Context, root interfa
 				return nil, err
 			}
 
-			violations = append(violations, validationContext.violationList...)
+			violations = append(violations, validationContext.ViolationList()...)
 		default:
 			itemMetadata.Constraints = append(itemMetadata.Constraints, constraintMetadata)
 		}

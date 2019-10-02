@@ -43,6 +43,10 @@ func (violations ViolationList) String() string {
 	return "No violations"
 }
 
+func (violations *ViolationList) append(violation *Violation) {
+	*violations = append(*violations, violation)
+}
+
 func (violation *Violation) splitPath() []string {
 	r := regexp.MustCompile(`\[([0-9]*)]`)
 	fields := strings.Split(violation.Path, ".")

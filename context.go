@@ -5,7 +5,7 @@ import "context"
 type (
 	ValidationContext struct {
 		ctx           context.Context
-		violationList ViolationList
+		violationList *ViolationList
 		path          string
 		arg           interface{}
 		root          interface{}
@@ -33,7 +33,7 @@ func (ctx *ValidationContext) Ctx() context.Context {
 }
 
 func (ctx *ValidationContext) ViolationList() ViolationList {
-	return ctx.violationList
+	return *ctx.violationList
 }
 
 func (ctx *ValidationContext) BuildViolation(error string, parameters map[string]interface{}) *violationBuilder {
@@ -43,7 +43,7 @@ func (ctx *ValidationContext) BuildViolation(error string, parameters map[string
 		parameters: parameters,
 		basePath:   ctx.path,
 		onAdd: func(violation Violation) {
-			ctx.violationList = append(ctx.violationList, &violation)
+			ctx.violationList.append(&violation)
 		},
 	}
 }
