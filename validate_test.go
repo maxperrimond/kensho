@@ -1,7 +1,6 @@
 package kensho
 
 import (
-	"encoding/json"
 	"testing"
 )
 
@@ -20,9 +19,9 @@ func TestValidate_struct(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		ok, err := Validate(test.subject)
+		ok, violations, _ := Validate(test.subject)
 		if ok != test.valid {
-			t.Errorf("Wrong validation result, expected: %t, actual: %t, with error: %v", test.valid, ok, err)
+			t.Errorf("Wrong validation result, expected: %t, actual: %t, with error: %s", test.valid, ok, violations)
 		}
 	}
 }
@@ -42,9 +41,9 @@ func TestValidate_listOfStruct(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		ok, err := Validate(test.subject)
+		ok, violations, _ := Validate(test.subject)
 		if ok != test.valid {
-			t.Errorf("Wrong validation result, expected: %t, actual: %t, with error: %v", test.valid, ok, err)
+			t.Errorf("Wrong validation result, expected: %t, actual: %t, with error: %s", test.valid, ok, violations)
 		}
 	}
 }
@@ -68,9 +67,9 @@ func TestValidate_embeddedStruct(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		ok, err := Validate(test.subject)
+		ok, violations, _ := Validate(test.subject)
 		if ok != test.valid {
-			t.Errorf("Wrong validation result, expected: %t, actual: %t, with error: %v", test.valid, ok, err)
+			t.Errorf("Wrong validation result, expected: %t, actual: %t, with error: %s", test.valid, ok, violations)
 		}
 	}
 }
@@ -94,9 +93,9 @@ func TestValidate_embeddedStructPtr(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		ok, err := Validate(test.subject)
+		ok, violations, _ := Validate(test.subject)
 		if ok != test.valid {
-			t.Errorf("Wrong validation result, expected: %t, actual: %t, with error: %v", test.valid, ok, err)
+			t.Errorf("Wrong validation result, expected: %t, actual: %t, with error: %s", test.valid, ok, violations)
 		}
 	}
 }
@@ -116,10 +115,9 @@ func TestValidate_embeddedStringList(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		ok, err := Validate(test.subject)
+		ok, violations, _ := Validate(test.subject)
 		if ok != test.valid {
-			b, _ := json.Marshal(err)
-			t.Errorf("Wrong validation result, expected: %t, actual: %t, with error: %v", test.valid, ok, string(b))
+			t.Errorf("Wrong validation result, expected: %t, actual: %t, with error: %s", test.valid, ok, violations)
 		}
 	}
 }

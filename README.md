@@ -24,7 +24,6 @@ A simple Go library for validation, but gives the possibility to validate deeply
  - Deep validation
  - List of struct validation
  - Translation
- - Different error structures (violation list, error tree)
 
 ## Installation
 
@@ -63,21 +62,19 @@ func main() {
 	}
 
 	// Validate user
-	ok, _ := kensho.Validate(user)
+	ok, violations, _ := kensho.Validate(user)
 
 	fmt.Printf("Result: %t\n", ok)
+	fmt.Println(violations)
 
 	user.Email = "this is not an email"
 	user.FirstName = ""
 
 	// Validate user after inserting bad data
-	ok, err := kensho.Validate(user)
-
-	formError := err.ToFormErrors()
+	ok, violations, _ = kensho.Validate(user)
 
 	fmt.Printf("Result: %t\n", ok)
-	fmt.Printf("Email errors: %v\n", formError.Fields["Email"].Errors)
-	fmt.Printf("First name errors: %v\n", formError.Fields["FirstName"].Errors)
+	fmt.Println(violations)
 
 	users := []*User{
 		{
@@ -93,9 +90,10 @@ func main() {
 	}
 
 	// Validate collection of users
-	ok, _ = kensho.Validate(users)
+	ok, violations, _ = kensho.Validate(users)
 
 	fmt.Printf("Result: %t\n", ok)
+	fmt.Println(violations)
 
 	// Nested struct
 	group := &Group{
@@ -104,13 +102,10 @@ func main() {
 	}
 
 	// Validate the group
-	ok, err = kensho.Validate(group)
-	
-	formError = err.ToFormErrors()
+	ok, violations, _ = kensho.Validate(group)
 
 	fmt.Printf("Result: %t\n", ok)
-	fmt.Printf("Email errors: %v\n", formError.Fields["Users"].Fields["2"].Fields["Email"].Errors)
-	fmt.Printf("First name errors: %v\n", formError.Fields["Users"].Fields["2"].Fields["FirstName"].Errors)
+	fmt.Println(violations)
 }
 ```
 
@@ -145,15 +140,12 @@ import (
 )
 
 // Define your constraint
-func poneyConstraint(ctx context.Context, subject interface{}, value interface{}, arg interface{}) *kensho.Error {
-	if value == "poney" {
-		return nil
+func poneyConstraint(ctx *kensho.ValidationContext) error {
+	if ctx.Value() != "poney" {
+		ctx.BuildViolation("invalid_poney", nil).AddViolation()
 	}
 
-	return &kensho.Error{
-		Error: "invalid_poney",
-		Message: "this is not a poney!!!",
-	}
+	return nil
 }
 
 func init() {
@@ -162,13 +154,6 @@ func init() {
 }
 ```
 
-param | Description
----|---
-ctx  | validation context
-subject | parent struct
-value | field value (or array value)
-arg | constraint argument from struct configuration
-
 Note: If you use an existent tag, it will override it.
 
 ### Context
@@ -176,5 +161,5 @@ Note: If you use an existent tag, it will override it.
 You can pass a context during validation so it can be accessible in constraints:
 
 ```go
-ok, err := kensho.ValidateWithContext(myCtx, myStruct)
+ok, violations, err := kensho.ValidateWithContext(ctx, subject)
 ```

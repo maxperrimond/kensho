@@ -1,57 +1,38 @@
 package kensho
 
 import (
-	"context"
 	"testing"
 )
 
 func Test_emailConstraint(t *testing.T) {
-	t.Parallel()
-
-	var tests = []struct {
-		subject  interface{}
-		expected bool
-	}{
-		{"foo@goo@com", false},
-		{"foo@bar", false},
-		{"foo", false},
-		{"", true},
-		{nil, true},
-		{"foo@example.com", true},
-	}
-
-	for _, test := range tests {
-		err := EmailConstraint(context.TODO(), ConstraintArgs{
-			Value: test.subject,
-		})
-		if ok := err == nil; ok != test.expected {
-			t.Errorf("Expected from email constraint: %t with %T(%v)", test.expected, test.subject, test.subject)
-		}
-	}
+	assertConstraintWithDataSet(t, EmailConstraint, []constraintCase{
+		{"foo@goo@com", nil, false},
+		{"foo@bar", nil, false},
+		{"foo", nil, false},
+		{"", nil, true},
+		{nil, nil, true},
+		{"foo@example.com", nil, true},
+	})
 }
 
 func Test_uuidConstraint(t *testing.T) {
-	t.Parallel()
+	assertConstraintWithDataSet(t, UUIDConstraint, []constraintCase{
+		{"9404926e-ef65-11e7-8c3f", nil, false},
+		{"9404926eef65-11e7-8c3f-9a214cf093ae", nil, false},
+		{"9404926z-ef65-11e7-8c3f-9a214cf093ae", nil, false},
+		{"", nil, true},
+		{nil, nil, true},
+		{"9404926e-ef65-11e7-8c3f-9a214cf093ae", nil, true},
+		{"dda6cd51-a791-47c6-9abf-2d835e755ad4", nil, true},
+	})
+}
 
-	var tests = []struct {
-		subject  interface{}
-		expected bool
-	}{
-		{"9404926e-ef65-11e7-8c3f", false},
-		{"9404926eef65-11e7-8c3f-9a214cf093ae", false},
-		{"9404926z-ef65-11e7-8c3f-9a214cf093ae", false},
-		{"", true},
-		{nil, true},
-		{"9404926e-ef65-11e7-8c3f-9a214cf093ae", true},
-		{"dda6cd51-a791-47c6-9abf-2d835e755ad4", true},
-	}
-
-	for _, test := range tests {
-		err := UUIDConstraint(context.TODO(), ConstraintArgs{
-			Value: test.subject,
-		})
-		if ok := err == nil; ok != test.expected {
-			t.Errorf("Expected from email constraint: %t with %T(%v)", test.expected, test.subject, test.subject)
-		}
-	}
+func Test_colorHexConstraint(t *testing.T) {
+	assertConstraintWithDataSet(t, ColorHexConstraint, []constraintCase{
+		{"foo", nil, false},
+		{"", nil, true},
+		{nil, nil, true},
+		{"#fff", nil, true},
+		{"#9f67cc", nil, true},
+	})
 }

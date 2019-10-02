@@ -1,7 +1,6 @@
 package kensho
 
 import (
-	"context"
 	"regexp"
 )
 
@@ -11,69 +10,56 @@ const (
 	colorHex = "^#(?:[0-9a-fA-F]{3}){1,2}$"
 )
 
-func validWithRegex(ctx context.Context, args ConstraintArgs, onError func() *Error) *Error {
-	if args.Value == nil {
+func validWithRegex(ctx *ValidationContext, pattern string, onViolation func()) error {
+	if ctx.Value() == nil {
 		return nil
 	}
 
-	err := StringConstraint(ctx, args)
+	err := StringConstraint(ctx)
 	if err != nil {
 		return err
 	}
 
-	if args.Value == "" {
+	if ctx.Value() == "" {
 		return nil
 	}
 
-	pattern, ok := args.Arg.(string)
+	if regexp.MustCompile(pattern).MatchString(ctx.Value().(string)) {
+		return nil
+	}
+
+	onViolation()
+
+	return nil
+}
+
+func RegexConstraint(ctx *ValidationContext) error {
+	pattern, ok := ctx.Arg().(string)
 	if !ok {
 		panic("the pattern is missing to validate with a regex")
 	}
 
-	if regexp.MustCompile(pattern).MatchString(args.Value.(string)) {
-		return nil
-	}
-
-	return onError()
-}
-
-func RegexConstraint(ctx context.Context, args ConstraintArgs) *Error {
-	return validWithRegex(ctx, args, func() *Error {
-		return NewError("not_match_regex", map[string]interface{}{
-			"regex": args.Arg.(string),
-		})
+	return validWithRegex(ctx, pattern, func() {
+		ctx.BuildViolation("not_match_regex", map[string]interface{}{
+			"regex": ctx.Arg().(string),
+		}).AddViolation()
 	})
 }
 
-func EmailConstraint(ctx context.Context, args ConstraintArgs) *Error {
-	return validWithRegex(ctx, ConstraintArgs{
-		Root:    args.Root,
-		Subject: args.Subject,
-		Value:   args.Value,
-		Arg:     email,
-	}, func() *Error {
-		return NewError("invalid_email", nil)
+func EmailConstraint(ctx *ValidationContext) error {
+	return validWithRegex(ctx, email, func() {
+		ctx.BuildViolation("invalid_email", nil).AddViolation()
 	})
 }
 
-func UUIDConstraint(ctx context.Context, args ConstraintArgs) *Error {
-	return validWithRegex(ctx, ConstraintArgs{
-		Root:    args.Root,
-		Subject: args.Subject,
-		Value:   args.Value,
-		Arg:     uuid,
-	}, func() *Error {
-		return NewError("invalid_uuid", nil)
+func UUIDConstraint(ctx *ValidationContext) error {
+	return validWithRegex(ctx, uuid, func() {
+		ctx.BuildViolation("invalid_uuid", nil).AddViolation()
 	})
 }
 
-func ColorHexConstraint(ctx context.Context, args ConstraintArgs) *Error {
-	return validWithRegex(ctx, ConstraintArgs{
-		Root:    args.Root,
-		Subject: args.Subject,
-		Value:   args.Value,
-		Arg:     colorHex,
-	}, func() *Error {
-		return NewError("invalid_color", nil)
+func ColorHexConstraint(ctx *ValidationContext) error {
+	return validWithRegex(ctx, colorHex, func() {
+		ctx.BuildViolation("invalid_color", nil).AddViolation()
 	})
 }

@@ -1,18 +1,11 @@
 package kensho
 
 import (
-	"context"
 	"testing"
 )
 
 func Test_iso3166Constraint(t *testing.T) {
-	t.Parallel()
-
-	var tests = []struct {
-		subject  interface{}
-		arg      interface{}
-		expected bool
-	}{
+	assertConstraintWithDataSet(t, ISO3166Constraint, []constraintCase{
 		{"ksdjhfjksh", nil, false},
 		{"foo", "", false},
 		{"", nil, true},
@@ -20,15 +13,17 @@ func Test_iso3166Constraint(t *testing.T) {
 		{"EG", "", true},
 		{"EGY", "alpha3", true},
 		{"818", "num", true},
-	}
+	})
+}
 
-	for _, test := range tests {
-		err := ISO3166Constraint(context.TODO(), ConstraintArgs{
-			Value: test.subject,
-			Arg:   test.arg,
-		})
-		if ok := err == nil; ok != test.expected {
-			t.Errorf("Expected from iso3166 constraint: %t with %T(%v)", test.expected, test.subject, test.subject)
-		}
-	}
+func Test_iso639Constraint(t *testing.T) {
+	assertConstraintWithDataSet(t, ISO639Constraint, []constraintCase{
+		{"ksdjhfjksh", nil, false},
+		{"foo", nil, false},
+		{"", nil, true},
+		{nil, nil, true},
+		{"ja", nil, true},
+		{"eng", nil, true},
+		{"uz-Cyrl", nil, true},
+	})
 }
