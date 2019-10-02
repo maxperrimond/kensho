@@ -14,6 +14,20 @@ type (
 	}
 )
 
+func (ctx *ValidationContext) WithValue(value interface{}) *ValidationContext {
+	clone := *ctx
+	clone.value = value
+
+	return &clone
+}
+
+func (ctx *ValidationContext) WithArg(arg interface{}) *ValidationContext {
+	clone := *ctx
+	clone.arg = arg
+
+	return &clone
+}
+
 func (ctx *ValidationContext) Ctx() context.Context {
 	return ctx.ctx
 }
