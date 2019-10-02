@@ -8,20 +8,21 @@ import (
 	"sync"
 )
 
-func Validate(subject interface{}) (bool, ViolationList) {
+func Validate(subject interface{}) (bool, ViolationList, error) {
 	return defaultValidator.Validate(subject)
 }
 
-func ValidateWithContext(ctx context.Context, subject interface{}) (bool, ViolationList) {
+func ValidateWithContext(ctx context.Context, subject interface{}) (bool, ViolationList, error) {
 	return defaultValidator.ValidateWithContext(ctx, subject)
 }
 
-func (validator *Validator) Validate(subject interface{}) (bool, ViolationList) {
+func (validator *Validator) Validate(subject interface{}) (bool, ViolationList, error) {
 	return validator.ValidateWithContext(context.Background(), subject)
 }
 
-func (validator *Validator) ValidateWithContext(ctx context.Context, subject interface{}) (bool, ViolationList) {
-	var violations ViolationList = nil
+func (validator *Validator) ValidateWithContext(ctx context.Context, subject interface{}) (bool, ViolationList, error) {
+	var violations ViolationList
+	var err error
 
 	val := reflect.ValueOf(subject)
 	if val.Kind() == reflect.Interface {
@@ -34,26 +35,27 @@ func (validator *Validator) ValidateWithContext(ctx context.Context, subject int
 
 	switch val.Type().Kind() {
 	case reflect.Array, reflect.Slice:
-		violations = validator.validateList(ctx, subject, "", val)
+		violations, err = validator.validateList(ctx, subject, "", val)
 	case reflect.Struct:
-		violations = validator.validateStruct(ctx, subject, "", val)
+		violations, err = validator.validateStruct(ctx, subject, "", val)
 	default:
 		panic(fmt.Sprintf("Cannot validate a %T, it must a struct or a list of struct", subject))
 	}
 
-	return violations == nil, violations
+	if err != nil {
+		return false, nil, err
+	}
+
+	return len(violations) == 0, violations, nil
 }
 
-func (validator *Validator) validateStruct(ctx context.Context, root interface{}, path string, val reflect.Value) ViolationList {
+func (validator *Validator) validateStruct(ctx context.Context, root interface{}, path string, val reflect.Value) (violations ViolationList, err error) {
 	var wg sync.WaitGroup
 
 	sm, err := validator.getStructMetadata(val.Interface())
 	if err != nil {
-		panic(fmt.Sprintf("Unable to get validations rules for %T because %s", val.Interface(), err.Error()))
+		return nil, fmt.Errorf("unable to get validations rules for %T because %s", val.Interface(), err.Error())
 	}
-
-	var violations ViolationList = nil
-	violationsMtx := sync.Mutex{}
 
 	for field, sfm := range sm.Fields {
 		fieldVal := val.FieldByName(sfm.FieldName)
@@ -66,24 +68,22 @@ func (validator *Validator) validateStruct(ctx context.Context, root interface{}
 		go func(fieldName string, fieldVal reflect.Value, metadata *FieldMetadata) {
 			defer wg.Done()
 
-			if valueViolations := validator.validateValue(ctx, root, appendPath(path, fieldName), val, fieldVal, metadata); valueViolations != nil {
-				violationsMtx.Lock()
-				violations = append(violations, valueViolations...)
-				violationsMtx.Unlock()
+			valueViolations, valueErr := validator.validateValue(ctx, root, appendPath(path, fieldName), val, fieldVal, metadata)
+			if valueErr != nil {
+				err = valueErr
 			}
+
+			violations = append(violations, valueViolations...)
 		}(field, fieldVal, sfm)
 	}
 
 	wg.Wait()
 
-	return violations
+	return violations, err
 }
 
-func (validator *Validator) validateList(ctx context.Context, root interface{}, path string, val reflect.Value) ViolationList {
+func (validator *Validator) validateList(ctx context.Context, root interface{}, path string, val reflect.Value) (violations ViolationList, err error) {
 	var wg sync.WaitGroup
-
-	var violations ViolationList = nil
-	violationsMtx := sync.Mutex{}
 
 	for i := 0; i < val.Len(); i++ {
 		wg.Add(1)
@@ -92,6 +92,7 @@ func (validator *Validator) validateList(ctx context.Context, root interface{}, 
 			defer wg.Done()
 
 			var itemViolations ViolationList = nil
+			var itemErr error
 
 			if itemVal.Kind() == reflect.Interface {
 				itemVal = itemVal.Elem()
@@ -103,33 +104,31 @@ func (validator *Validator) validateList(ctx context.Context, root interface{}, 
 
 			switch itemVal.Type().Kind() {
 			case reflect.Array, reflect.Slice:
-				itemViolations = validator.validateList(ctx, root, appendIndex(path, fieldName), itemVal)
+				itemViolations, itemErr = validator.validateList(ctx, root, appendIndex(path, fieldName), itemVal)
 			case reflect.Struct:
-				itemViolations = validator.validateStruct(ctx, root, appendIndex(path, fieldName), itemVal)
+				itemViolations, itemErr = validator.validateStruct(ctx, root, appendIndex(path, fieldName), itemVal)
 			default:
 				panic(fmt.Sprintf("Cannot validate a %T, it must received a struct or a list of structs", itemVal.Interface()))
 			}
 
-			if itemViolations != nil {
-				violationsMtx.Lock()
-				violations = append(violations, itemViolations...)
-				violationsMtx.Unlock()
+			if itemErr != nil {
+				err = itemErr
 			}
+
+			violations = append(violations, itemViolations...)
 		}(strconv.Itoa(i), val.Index(i))
 	}
 
 	wg.Wait()
 
-	return violations
+	return violations, err
 }
 
-func (validator *Validator) validateValue(ctx context.Context, root interface{}, path string, val reflect.Value, fieldVal reflect.Value, metadata *FieldMetadata) ViolationList {
+func (validator *Validator) validateValue(ctx context.Context, root interface{}, path string, val reflect.Value, fieldVal reflect.Value, metadata *FieldMetadata) (violations ViolationList, err error) {
 	switch fieldVal.Type().Kind() {
 	case reflect.Array, reflect.Slice:
 		return validator.validateArrayValue(ctx, root, path, val, fieldVal, metadata)
 	}
-
-	var violations ViolationList = nil
 
 	var nested bool
 	for _, constraintMetadata := range metadata.Constraints {
@@ -137,15 +136,21 @@ func (validator *Validator) validateValue(ctx context.Context, root interface{},
 			nested = true
 		}
 
-		err := constraintMetadata.Constraint(ctx, ConstraintArgs{
-			Root:    root,
-			Subject: val.Interface(),
-			Value:   fieldVal.Interface(),
-			Arg:     constraintMetadata.Arg,
-		})
-		if err != nil {
-			violations = append(violations, &Violation{*err, path})
+		validationContext := &ValidationContext{
+			ctx:     ctx,
+			value:   fieldVal.Interface(),
+			path:    path,
+			subject: val.Interface(),
+			root:    root,
+			arg:     constraintMetadata.Arg,
 		}
+
+		err := constraintMetadata.Constraint(validationContext)
+		if err != nil {
+			return nil, err
+		}
+
+		violations = append(violations, validationContext.violationList...)
 	}
 
 	if fieldVal.Kind() == reflect.Interface {
@@ -157,34 +162,39 @@ func (validator *Validator) validateValue(ctx context.Context, root interface{},
 	}
 
 	if nested && fieldVal.Kind() == reflect.Struct {
-		structViolations := validator.validateStruct(ctx, root, path, fieldVal)
-		if structViolations != nil {
-			violations = append(violations, structViolations...)
+		structViolations, err := validator.validateStruct(ctx, root, path, fieldVal)
+		if err != nil {
+			return nil, err
 		}
+
+		violations = append(violations, structViolations...)
 	}
 
-	return violations
+	return violations, nil
 }
 
-func (validator *Validator) validateArrayValue(ctx context.Context, root interface{}, path string, val reflect.Value, fieldVal reflect.Value, metadata *FieldMetadata) ViolationList {
-	var violations ViolationList = nil
-	violationsMtx := sync.Mutex{}
-
+func (validator *Validator) validateArrayValue(ctx context.Context, root interface{}, path string, val reflect.Value, fieldVal reflect.Value, metadata *FieldMetadata) (violations ViolationList, err error) {
 	itemMetadata := &FieldMetadata{
 		FieldName: metadata.FieldName,
 	}
 	for _, constraintMetadata := range metadata.Constraints {
 		switch constraintMetadata.Tag {
 		case "required", "min", "max", "length":
-			err := constraintMetadata.Constraint(ctx, ConstraintArgs{
-				Root:    root,
-				Subject: val.Interface(),
-				Value:   fieldVal.Interface(),
-				Arg:     constraintMetadata.Arg,
-			})
-			if err != nil {
-				violations = append(violations, &Violation{*err, path})
+			validationContext := &ValidationContext{
+				ctx:     ctx,
+				value:   fieldVal.Interface(),
+				path:    path,
+				subject: val.Interface(),
+				root:    root,
+				arg:     constraintMetadata.Arg,
 			}
+
+			err := constraintMetadata.Constraint(validationContext)
+			if err != nil {
+				return nil, err
+			}
+
+			violations = append(violations, validationContext.violationList...)
 		default:
 			itemMetadata.Constraints = append(itemMetadata.Constraints, constraintMetadata)
 		}
@@ -197,17 +207,18 @@ func (validator *Validator) validateArrayValue(ctx context.Context, root interfa
 		go func(fieldName string, itemVal reflect.Value) {
 			defer wg.Done()
 
-			if valueViolations := validator.validateValue(ctx, root, appendIndex(path, fieldName), val, itemVal, itemMetadata); valueViolations != nil {
-				violationsMtx.Lock()
-				violations = append(violations, valueViolations...)
-				violationsMtx.Unlock()
+			valueViolations, valueErr := validator.validateValue(ctx, root, appendIndex(path, fieldName), val, itemVal, itemMetadata)
+			if valueErr != nil {
+				err = valueErr
 			}
+
+			violations = append(violations, valueViolations...)
 		}(strconv.Itoa(i), fieldVal.Index(i))
 	}
 
 	wg.Wait()
 
-	return violations
+	return violations, err
 }
 
 func appendPath(path string, field string) string {

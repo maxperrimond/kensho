@@ -1,58 +1,57 @@
 package kensho
 
 import (
-	"context"
 	"fmt"
 	"reflect"
 )
 
-func validConstraint(_ context.Context, _ ConstraintArgs) *Error {
+func validConstraint(_ *ValidationContext) error {
 	return nil
 }
 
-func StructConstraint(_ context.Context, args ConstraintArgs) *Error {
-	if args.Value == nil {
+func StructConstraint(ctx *ValidationContext) error {
+	if ctx.Value() == nil {
 		return nil
 	}
 
-	t := reflect.TypeOf(args.Value)
+	t := reflect.TypeOf(ctx.Value())
 	if t.Kind() == reflect.Ptr || t.Kind() == reflect.Interface {
 		t = t.Elem()
 	}
 
 	if t.Kind() != reflect.Struct {
-		return NewError("not_struct", nil)
+		ctx.BuildViolation("not_struct", nil).AddViolation()
 	}
 
 	return nil
 }
 
-func StringConstraint(_ context.Context, args ConstraintArgs) *Error {
-	if args.Value == nil {
+func StringConstraint(ctx *ValidationContext) error {
+	if ctx.Value() == nil {
 		return nil
 	}
 
-	t := reflect.TypeOf(args.Value)
+	t := reflect.TypeOf(ctx.Value())
 	if t.Kind() == reflect.Ptr || t.Kind() == reflect.Interface {
 		t = t.Elem()
 	}
 
 	if t.Kind() != reflect.String {
-		return NewError("not_string", nil)
+		ctx.BuildViolation("not_string", nil).AddViolation()
 	}
 
 	return nil
 }
 
-func RequiredConstraint(_ context.Context, args ConstraintArgs) *Error {
-	if args.Value != nil {
-		switch reflect.TypeOf(args.Value).Kind() {
+func RequiredConstraint(ctx *ValidationContext) error {
+	if ctx.Value() != nil {
+		switch reflect.TypeOf(ctx.Value()).Kind() {
 		case reflect.String:
-			if len(args.Value.(string)) > 0 {
+			if len(ctx.Value().(string)) > 0 {
 				return nil
 			}
 		case reflect.Array, reflect.Slice, reflect.Map, reflect.Ptr, reflect.Interface:
-			if !reflect.ValueOf(args.Value).IsNil() {
+			if !reflect.ValueOf(ctx.Value()).IsNil() {
 				return nil
 			}
 		default:
@@ -60,32 +59,34 @@ func RequiredConstraint(_ context.Context, args ConstraintArgs) *Error {
 		}
 	}
 
-	return NewError("is_required", nil)
+	ctx.BuildViolation("is_required", nil).AddViolation()
+
+	return nil
 }
 
-func LengthConstraint(_ context.Context, args ConstraintArgs) *Error {
-	if args.Value == nil {
+func LengthConstraint(ctx *ValidationContext) error {
+	if ctx.Value() == nil {
 		return nil
 	}
 
 	var length int
-	switch args.Arg.(type) {
+	switch ctx.Arg().(type) {
 	case int:
-		length = args.Arg.(int)
+		length = ctx.Arg().(int)
 	case int64:
-		length = int(args.Arg.(int64))
+		length = int(ctx.Arg().(int64))
 	case float64:
-		length = int(args.Arg.(float64))
+		length = int(ctx.Arg().(float64))
 	default:
-		panic(fmt.Sprintf("invalid argument to length: %v", args.Arg))
+		panic(fmt.Sprintf("invalid argument to length: %v", ctx.Arg()))
 	}
 
-	switch reflect.TypeOf(args.Value).Kind() {
+	switch reflect.TypeOf(ctx.Value()).Kind() {
 	case reflect.String, reflect.Array, reflect.Slice, reflect.Map:
-		if reflect.ValueOf(args.Value).Len() != length {
-			return NewError("invalid_length", map[string]interface{}{
+		if reflect.ValueOf(ctx.Value()).Len() != length {
+			ctx.BuildViolation("invalid_length", map[string]interface{}{
 				"length": length,
-			})
+			}).AddViolation()
 		}
 
 		return nil
@@ -94,30 +95,30 @@ func LengthConstraint(_ context.Context, args ConstraintArgs) *Error {
 	}
 }
 
-func MinConstraint(_ context.Context, args ConstraintArgs) *Error {
-	if args.Value == nil {
+func MinConstraint(ctx *ValidationContext) error {
+	if ctx.Value() == nil {
 		return nil
 	}
 
 	var min int
-	switch args.Arg.(type) {
+	switch ctx.Arg().(type) {
 	case int:
-		min = args.Arg.(int)
+		min = ctx.Arg().(int)
 	case int64:
-		min = int(args.Arg.(int64))
+		min = int(ctx.Arg().(int64))
 	case float64:
-		min = int(args.Arg.(float64))
+		min = int(ctx.Arg().(float64))
 	default:
-		panic(fmt.Sprintf("invalid argument to min: %v", args.Arg))
+		panic(fmt.Sprintf("invalid argument to min: %v", ctx.Arg()))
 	}
 
-	switch reflect.TypeOf(args.Value).Kind() {
+	switch reflect.TypeOf(ctx.Value()).Kind() {
 	case reflect.String, reflect.Array, reflect.Slice, reflect.Map:
-		if length := reflect.ValueOf(args.Value).Len(); length < min {
-			return NewError("too_short", map[string]interface{}{
+		if length := reflect.ValueOf(ctx.Value()).Len(); length < min {
+			ctx.BuildViolation("too_short", map[string]interface{}{
 				"min":    min,
 				"length": length,
-			})
+			}).AddViolation()
 		}
 
 		return nil
@@ -126,30 +127,30 @@ func MinConstraint(_ context.Context, args ConstraintArgs) *Error {
 	}
 }
 
-func MaxConstraint(_ context.Context, args ConstraintArgs) *Error {
-	if args.Value == nil {
+func MaxConstraint(ctx *ValidationContext) error {
+	if ctx.Value() == nil {
 		return nil
 	}
 
 	var max int
-	switch args.Arg.(type) {
+	switch ctx.Arg().(type) {
 	case int:
-		max = args.Arg.(int)
+		max = ctx.Arg().(int)
 	case int64:
-		max = int(args.Arg.(int64))
+		max = int(ctx.Arg().(int64))
 	case float64:
-		max = int(args.Arg.(float64))
+		max = int(ctx.Arg().(float64))
 	default:
-		panic(fmt.Sprintf("invalid argument to max: %v", args.Arg))
+		panic(fmt.Sprintf("invalid argument to max: %v", ctx.Arg()))
 	}
 
-	switch reflect.TypeOf(args.Value).Kind() {
+	switch reflect.TypeOf(ctx.Value()).Kind() {
 	case reflect.String, reflect.Array, reflect.Slice, reflect.Map:
-		if length := reflect.ValueOf(args.Value).Len(); length > max {
-			return NewError("too_long", map[string]interface{}{
+		if length := reflect.ValueOf(ctx.Value()).Len(); length > max {
+			ctx.BuildViolation("too_long", map[string]interface{}{
 				"max":    max,
 				"length": length,
-			})
+			}).AddViolation()
 		}
 
 		return nil

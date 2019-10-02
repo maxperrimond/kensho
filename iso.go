@@ -1,8 +1,6 @@
 package kensho
 
 import (
-	"context"
-
 	"golang.org/x/text/language"
 )
 
@@ -267,63 +265,66 @@ var iso3166List = []iso3166{
 	{"Zambia", "ZM", "ZMB", "894"},
 }
 
-func ISO3166Constraint(ctx context.Context, args ConstraintArgs) *Error {
-	if args.Value == nil {
+func ISO3166Constraint(ctx *ValidationContext) error {
+	if ctx.Value() == nil {
 		return nil
 	}
 
-	err := StringConstraint(ctx, args)
+	err := StringConstraint(ctx)
 	if err != nil {
 		return err
 	}
 
-	str := args.Value.(string)
+	str := ctx.Value().(string)
 	if str == "" {
 		return nil
 	}
 
-	compare, _ := args.Arg.(string)
+	compare, _ := ctx.Arg().(string)
 	for _, country := range iso3166List {
 		switch compare {
 		case "alpha3":
-			if country.Alpha3 == args.Value {
+			if country.Alpha3 == ctx.Value() {
 				return nil
 			}
 		case "num":
-			if country.Numeric == args.Value {
+			if country.Numeric == ctx.Value() {
 				return nil
 			}
 		default:
-			if country.Alpha2 == args.Value {
+			if country.Alpha2 == ctx.Value() {
 				return nil
 			}
 		}
 	}
 
-	return NewError("invalid_country", map[string]interface{}{
+	ctx.BuildViolation("invalid_country", map[string]interface{}{
 		"kind":  compare,
-		"value": args.Value,
-	})
+		"value": ctx.Value(),
+	}).AddViolation()
+
+	return nil
 }
 
-func ISO639Constraint(ctx context.Context, args ConstraintArgs) *Error {
-	if args.Value == nil {
+func ISO639Constraint(ctx *ValidationContext) error {
+	if ctx.Value() == nil {
 		return nil
 	}
 
-	if err := StringConstraint(ctx, args); err != nil {
+	err := StringConstraint(ctx)
+	if err != nil {
 		return err
 	}
 
-	str := args.Value.(string)
+	str := ctx.Value().(string)
 	if str == "" {
 		return nil
 	}
 
-	if _, err := language.Parse(args.Value.(string)); err != nil {
-		return NewError("invalid_language", map[string]interface{}{
-			"value": args.Value,
-		})
+	if _, err := language.Parse(ctx.Value().(string)); err != nil {
+		ctx.BuildViolation("invalid_language", map[string]interface{}{
+			"value": ctx.Value(),
+		}).AddViolation()
 	}
 
 	return nil

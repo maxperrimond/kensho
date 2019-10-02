@@ -1,7 +1,5 @@
 package kensho
 
-import "context"
-
 type (
 	ConstraintArgs struct {
 		Root    interface{}
@@ -10,7 +8,7 @@ type (
 		Arg     interface{}
 	}
 
-	Constraint func(ctx context.Context, args ConstraintArgs) *Error
+	Constraint func(ctx *ValidationContext) error
 
 	CustomConstraint struct {
 		Name       string

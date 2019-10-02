@@ -26,21 +26,19 @@ func main() {
 	}
 
 	// Validate user
-	ok, _ := kensho.Validate(user)
+	ok, violations, _ := kensho.Validate(user)
 
 	fmt.Printf("Result: %t\n", ok)
+	fmt.Println(violations)
 
 	user.Email = "this is not an email"
 	user.FirstName = ""
 
 	// Validate user after inserting bad data
-	ok, err := kensho.Validate(user)
-
-	formError := err.ToFormErrors()
+	ok, violations, _ = kensho.Validate(user)
 
 	fmt.Printf("Result: %t\n", ok)
-	fmt.Printf("Email errors: %v\n", formError.Fields["Email"].Errors)
-	fmt.Printf("First name errors: %v\n", formError.Fields["FirstName"].Errors)
+	fmt.Println(violations)
 
 	users := []*User{
 		{
@@ -56,9 +54,10 @@ func main() {
 	}
 
 	// Validate collection of users
-	ok, _ = kensho.Validate(users)
+	ok, violations, _ = kensho.Validate(users)
 
 	fmt.Printf("Result: %t\n", ok)
+	fmt.Println(violations)
 
 	// Nested struct
 	group := &Group{
@@ -67,11 +66,8 @@ func main() {
 	}
 
 	// Validate the group
-	ok, err = kensho.Validate(group)
-
-	formError = err.ToFormErrors()
+	ok, violations, _ = kensho.Validate(group)
 
 	fmt.Printf("Result: %t\n", ok)
-	fmt.Printf("Email errors: %v\n", formError.Fields["Users"].Fields["2"].Fields["Email"].Errors)
-	fmt.Printf("First name errors: %v\n", formError.Fields["Users"].Fields["2"].Fields["FirstName"].Errors)
+	fmt.Println(violations)
 }
